@@ -1,0 +1,1228 @@
+﻿
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ParkSync â€” Smart Parking Management</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --green:#0a7c55;--green-light:#e6f5ef;--green-mid:#1aad78;--green-dark:#065c3e;
+  --amber:#c47e0a;--amber-light:#fdf3e0;--amber-mid:#e8a020;
+  --red:#b83232;--red-light:#fbeaea;--red-mid:#e05050;
+  --blue:#1756a0;--blue-light:#e8f1fb;--blue-mid:#3a7dd4;
+  --ink:#141414;--ink2:#3a3a3a;--ink3:#6b6b6b;--ink4:#9a9a9a;
+  --surface:#ffffff;--surface2:#f6f6f4;--surface3:#eeede9;
+  --border:#e0dfd9;--border2:#cccbc4;
+  --r:10px;--r2:16px;--r3:24px;
+  --shadow:0 1px 3px rgba(0,0,0,.08),0 4px 16px rgba(0,0,0,.06);
+  --shadow2:0 2px 8px rgba(0,0,0,.1),0 8px 32px rgba(0,0,0,.08);
+}
+html,body{height:100%;font-family:'DM Sans',sans-serif;background:var(--surface2);color:var(--ink);font-size:15px;line-height:1.5;}
+h1,h2,h3,.syne{font-family:'Syne',sans-serif;}
+
+
+/* â”€â”€ PAGES â”€â”€ */
+.page{display:none;min-height:100vh;}
+.page.active{display:block;}
+
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   LANDING / LOGIN PAGE
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+#page-landing{background:var(--ink);flex-direction:column;}
+#page-landing.active{display:flex;}
+.landing-hero{
+  flex:1;display:flex;align-items:stretch;min-height:100vh;
+  background:linear-gradient(135deg,#0d1f17 0%,#0a2e20 50%,#111 100%);
+  position:relative;overflow:hidden;
+}
+
+.landing-hero::before{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse 60% 60% at 70% 40%,rgba(26,173,120,.18) 0%,transparent 70%);
+  pointer-events:none;
+}
+.landing-left{
+  flex:1;display:flex;flex-direction:column;justify-content:center;
+  padding:5rem 4rem 5rem 5rem;position:relative;z-index:2;
+}
+.landing-badge{
+  display:inline-flex;align-items:center;gap:8px;
+  background:rgba(26,173,120,.15);border:1px solid rgba(26,173,120,.3);
+  border-radius:100px;padding:6px 16px;font-size:13px;color:var(--green-mid);
+
+  font-weight:500;margin-bottom:2rem;width:fit-content;
+}
+.pulse{width:7px;height:7px;border-radius:50%;background:var(--green-mid);animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.5;transform:scale(1.3);}}
+.landing-h1{font-size:clamp(2.8rem,5vw,4.5rem);font-weight:800;color:#fff;line-height:1.05;margin-bottom:1.5rem;}
+.landing-h1 span{color:var(--green-mid);}
+.landing-sub{font-size:1.1rem;color:rgba(255,255,255,.55);max-width:480px;line-height:1.7;margin-bottom:3rem;}
+.feature-pills{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:3rem;}
+.pill{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:100px;padding:6px 16px;font-size:13px;color:rgba(255,255,255,.7);}
+.landing-stats{display:flex;gap:2.5rem;}
+.lstat{display:flex;flex-direction:column;}
+.lstat-val{font-family:'Syne',sans-serif;font-size:2rem;font-weight:700;color:#fff;}
+.lstat-label{font-size:12px;color:rgba(255,255,255,.4);margin-top:2px;}
+
+.landing-right{
+  width:460px;display:flex;align-items:center;justify-content:center;
+  padding:3rem;background:rgba(0,0,0,.25);border-left:1px solid rgba(255,255,255,.07);
+  position:relative;z-index:2;
+}
+.login-card{width:100%;max-width:380px;}
+.login-logo{display:flex;align-items:center;gap:12px;margin-bottom:2.5rem;}
+.login-logo-icon{width:44px;height:44px;background:var(--green);border-radius:12px;display:flex;align-items:center;justify-content:center;}
+.login-logo-icon svg{width:24px;height:24px;fill:white;}
+.login-logo-text{font-family:'Syne',sans-serif;font-size:1.5rem;font-weight:700;color:#fff;}
+.login-logo-sub{font-size:12px;color:rgba(255,255,255,.4);}
+.login-tabs{display:flex;gap:0;margin-bottom:2rem;background:rgba(255,255,255,.07);border-radius:10px;padding:4px;}
+.login-tab{flex:1;padding:9px;text-align:center;border-radius:7px;font-size:13px;font-weight:500;cursor:pointer;color:rgba(255,255,255,.5);border:none;background:transparent;transition:.15s;font-family:'DM Sans',sans-serif;}
+.login-tab.active{background:rgba(255,255,255,.12);color:#fff;}
+.login-field{margin-bottom:16px;}
+.login-field label{display:block;font-size:12px;font-weight:500;color:rgba(255,255,255,.5);margin-bottom:6px;letter-spacing:.04em;text-transform:uppercase;}
+.login-field input{
+  width:100%;padding:11px 14px;
+  background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);
+  border-radius:var(--r);font-size:14px;color:#fff;font-family:'DM Sans',sans-serif;
+  outline:none;transition:.15s;
+
+}
+.login-field input::placeholder{color:rgba(255,255,255,.25);}
+.login-field input:focus{border-color:var(--green-mid);background:rgba(255,255,255,.11);}
+.login-hint{font-size:11px;color:rgba(255,255,255,.3);margin-top:5px;}
+.btn-login{
+  width:100%;padding:13px;background:var(--green);border:none;border-radius:var(--r);
+  font-size:15px;font-weight:600;color:#fff;cursor:pointer;font-family:'DM Sans',sans-serif;
+  margin-top:8px;transition:.15s;letter-spacing:.01em;
+}
+.btn-login:hover{background:var(--green-dark);}
+.login-err{color:#f08080;font-size:13px;margin-top:10px;display:none;text-align:center;}
+
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   SHARED APP SHELL
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+.app-shell{min-height:100vh;display:flex;flex-direction:column;}
+.topnav{
+  height:62px;background:var(--surface);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;padding:0 2rem;gap:1rem;
+  position:sticky;top:0;z-index:100;
+
+}
+.nav-logo{display:flex;align-items:center;gap:10px;text-decoration:none;}
+.nav-logo-icon{width:34px;height:34px;background:var(--green);border-radius:9px;display:flex;align-items:center;justify-content:center;}
+.nav-logo-icon svg{width:19px;height:19px;fill:white;}
+.nav-logo-name{font-family:'Syne',sans-serif;font-size:1.1rem;font-weight:700;color:var(--ink);}
+.nav-sep{width:1px;height:24px;background:var(--border);margin:0 .5rem;}
+.nav-links{display:flex;gap:2px;flex:1;}
+.nav-link{
+  padding:7px 14px;border-radius:8px;font-size:14px;font-weight:500;
+
+  color:var(--ink3);cursor:pointer;border:none;background:transparent;
+  font-family:'DM Sans',sans-serif;transition:.12s;white-space:nowrap;
+}
+.nav-link:hover{background:var(--surface2);color:var(--ink);}
+.nav-link.active{background:var(--green-light);color:var(--green-dark);font-weight:600;}
+.nav-right{display:flex;align-items:center;gap:10px;margin-left:auto;}
+.nav-user{display:flex;align-items:center;gap:8px;padding:5px 12px 5px 5px;border:1px solid var(--border);border-radius:100px;cursor:pointer;}
+.nav-avatar{width:28px;height:28px;border-radius:50%;background:var(--green);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;}
+.nav-username{font-size:13px;font-weight:500;}
+.nav-role{font-size:11px;color:var(--ink4);}
+.btn-logout{padding:7px 14px;border:1px solid var(--border);border-radius:8px;font-size:13px;cursor:pointer;background:transparent;font-family:'DM Sans',sans-serif;color:var(--ink3);}
+.btn-logout:hover{background:var(--red-light);color:var(--red);border-color:var(--red-mid);}
+.live-dot{width:8px;height:8px;border-radius:50%;background:var(--green-mid);animation:pulse 2s infinite;flex-shrink:0;}
+.live-label{font-size:12px;color:var(--green);font-weight:500;}
+
+.main-content{flex:1;padding:2rem;max-width:1100px;margin:0 auto;width:100%;}
+.section-hidden{display:none;}
+
+/* â”€â”€ PAGE HEADER â”€â”€ */
+.page-header{margin-bottom:1.75rem;}
+.page-title{font-size:1.6rem;font-weight:700;color:var(--ink);line-height:1.2;}
+.page-sub{font-size:14px;color:var(--ink3);margin-top:4px;}
+
+/* â”€â”€ METRIC CARDS â”€â”€ */
+.metrics-row{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:1.75rem;}
+.metric-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r2);padding:1.25rem 1.5rem;position:relative;overflow:hidden;}
+.metric-card::after{content:'';position:absolute;top:0
+
+;left:0;right:0;height:3px;}
+.metric-card.green::after{background:var(--green-mid);}
+.metric-card.amber::after{background:var(--amber-mid);}
+.metric-card.red::after{background:var(--red-mid);}
+.metric-card.blue::after{background:var(--blue-mid);}
+.metric-label{font-size:11px;font-weight:600;color:var(--ink4);letter-spacing:.06em;text-transform:uppercase;margin-bottom:8px;}
+.metric-val{font-family:'Syne',sans-serif;font-size:2rem;font-weight:700;}
+.metric-val.green{color:var(--green);}
+.metric-val.amber{color:var(--amber);}
+.metric-val.red{color:var(--red);}
+.metric-val.blue{color:var(--blue);}
+.metric-sub{font-size:12px;color:var(--ink4);margin-top:4px;}
+
+.progress-bar{height:4px;background:var(--surface3);border-radius:2px;overflow:hidden;margin-top:10px;}
+.progress-fill{height:100%;border-radius:2px;transition:width .4s;}
+.progress-fill.green{background:var(--green-mid);}
+.progress-fill.blue{background:var(--blue-mid);}
+
+/* â”€â”€ CARDS â”€â”€ */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r2);padding:1.5rem;}
+.card-title{font-size:1rem;font-weight:600;color:var(--ink);margin-bottom:1rem;}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:1rem;}
+.three-col{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;}
+
+/* â”€â”€ SLOTS â”€â”€ */
+.floor-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem;}
+.floor-badge{background:var(--green-light);color:var(--green-dark);font-size:12px;font-weight:600;padding:4px 14px;border-radius:100px;border:1px solid rgba(10,124,85,.2);}
+.slot-legend{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:12px;}
+.legend-item{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--ink3);}
+.legend-dot{width:12px;height:12px;border-radius:3px;}
+.slot-grid{display:grid;grid-template-columns:repeat(10,minmax(0,1fr));gap:6px;margin-bottom:1.5rem;}
+
+.slot{
+  border-radius:6px;aspect-ratio:1;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;font-size:9px;font-weight:700;
+  cursor:pointer;border:1.5px solid transparent;transition:transform .1s,box-shadow .1s;
+}
+.slot:hover{transform:scale(1.12);z-index:2;box-shadow:0 2px 10px rgba(0,0,0,.15);}
+.slot.available{background:var(--green-light);color:var(--green-dark);border-color:#8dd5b8;}
+.slot.occupied{background:var(--red-light);color:var(--red);border-color:#e8a0a0;}
+.slot.reserved{background:var(--amber-light);color:var(--amber);border-color:#e8c060;}
+.slot-lbl{font-size:9px;font-weight:700;}
+.slot-tmr{font-size:7px;opacity:.75;margin-top:1px;}
+.slot-info-bar{
+  background:var(--blue-light);border:1px solid #b0cdf0;border-radius:var(--r);
+  padding:12px 16px;margin-bottom:1.25rem;font-size:13px;color:var(--blue);display:none;
+}
+.slot-info-bar.show{display:block;}
+.timer-pill{background:var(--amber-light);color:var(--amber);border:1px solid #e8c060;border-radius:100px;padding:2px 10px;font-size:11px;font-weight:600;margin-left:8px;}
+
+/* â”€â”€ ACTIVITY â”€â”€ */
+.activity-list{display:flex;flex-direction:column;gap:7px;max-height:260px;overflow-y:auto;}
+.activity-item{display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--surface2);border-radius:var(--r);font-size:12px;}
+.abadge{padding:3px 10px;border-radius:100px;font-size:11px;font-weight:600;white-space:nowrap;}
+.abadge.green{background:var(--green-light);color:var(--green-dark);}
+.abadge.red{background:var(--red-light);color:var(--red);}
+.abadge.amber{background:var(--amber-light);color:var(--amber);}
+.abadge.blue{background:var(--blue-light);color:var(--blue);}
+.atext{flex:1;color:var(--ink2);}
+.atime{color:var(--ink4);font-size:11px;white-space:nowrap;}
+
+/* â”€â”€ FORMS â”€â”€ */
+
+.form-row{margin-bottom:14px;}
+.form-label{display:block;font-size:12px;font-weight:600;color:var(--ink3);margin-bottom:5px;letter-spacing:.03em;text-transform:uppercase;}
+.form-row input,.form-row select,.form-row textarea{
+  width:100%;padding:10px 13px;border:1px solid var(--border2);border-radius:var(--r);
+  font-size:14px;color:var(--ink);font-family:'DM Sans',sans-serif;
+  background:var(--surface2);outline:none;transition:.15s;
+}
+.form-row input:focus,.form-row select:focus,.form-row textarea:focus{border-color:var(--green);background:var(--surface);}
+.btn{padding:9px 20px;border-radius:var(--r);font-size:14px;font-weight:600;cursor:pointer;border:1px solid var(--border2);background:var(--surface);color:var(--ink2);transition:.12s;font-family:'DM Sans',sans-serif;}
+.btn:hover{background:var(--surface2);}
+.btn.primary{background:var(--green);color:#fff;border-color:var(--green);}
+.btn.primary:hover{background:var(--green-dark);}
+.btn.danger{background:var(--red);color:#fff;border-color:var(--red);}
+.btn.danger:hover{background:#8a2424;}
+.btn.amber{background:var(--amber);color:#fff;border-color:var(--amber);}
+.btn-row{display:flex;gap:8px;margin-top:16px;}
+.msg-ok{font-size:13px;color:var(--green);font-weight:500;display:none;margin-top:10px;}
+
+.msg-err{font-size:13px;color:var(--red);font-weight:500;display:none;margin-top:10px;}
+
+/* â”€â”€ TABLES â”€â”€ */
+.table-wrap{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;font-size:13px;}
+th{text-align:left;padding:10px 14px;font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--ink4);border-bottom:1px solid var(--border);white-space:nowrap;}
+td{padding:11px 14px;border-bottom:1px solid var(--border);color:var(--ink2);vertical-align:middle;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:var(--surface2);}
+.status-pill{padding:3px 10px;border-radius:100px;font-size:11px;font-weight:600;}
+.sp-avail{background:var(--green-light);color:var(--green-dark);}
+.sp-occ{background:var(--red-light);color:var(--red);}
+.sp-res{background:var(--amber-light);color:var(--amber);}
+
+/* â”€â”€ REPORTS â”€â”€ */
+.report-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;}
+.chart-box{background:var(--surface);border:1px solid var(--border);border-radius:var(--r2);padding:1.5rem;}
+.chart-title{font-size:14px;font-weight:600;margin-bottom:1rem;}
+.bar-chart{display:flex;flex-direction:column;gap:10px;}
+.bar-row{display:flex;align-items:center;gap:10px;font-size:12px;}
+.bar-label{width:80px;color:var(--ink3);text-align:right;flex-shrink:0;}
+.bar-track{flex:1;height:22px;background:var(--surface3);border-radius:4px;overflow:hidden;position:relative;}
+.bar-fill{height:100%;border-radius:4px;transition:width .6s ease;display:flex;align-items:center;padding-left:8px;}
+.bar-fill span{font-size:11px;font-weight:600;color:#fff;white-space:nowrap;}
+.bar-fill.green-b{background:var(--green-mid);}
+.bar-fill.blue-b{background:var(--blue-mid);}
+.bar-fill.amber-b{background:var(--amber-mid);}
+.donut-wrap{display:flex;align-items:center;gap:1.5rem;}
+
+.donut-legend{display:flex;flex-direction:column;gap:10px;}
+.donut-legend-item{display:flex;align-items:center;gap:8px;font-size:13px;}
+.donut-dot{width:10px;height:10px;border-radius:2px;flex-shrink:0;}
+.donut-val{font-weight:600;margin-left:auto;padding-left:20px;}
+.summary-table-wrap .card{padding:0;overflow:hidden;}
+.summary-table-wrap table{font-size:13px;}
+
+/* â”€â”€ QUICK STATS â”€â”€ */
+.qstat-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);}
+.qstat-row:last-child{border-bottom:none;}
+.qstat-key{font-size:13px;color:var(--ink3);}
+.qstat-val{font-size:14px;font-weight:600;color:var(--ink);}
+
+
+/* â”€â”€ BOOKING CONFIRMED â”€â”€ */
+.confirm-box{background:var(--green-light);border:1px solid #8dd5b8;border-radius:var(--r2);padding:1.5rem;text-align:center;display:none;}
+.confirm-box.show{display:block;}
+.confirm-icon{font-size:2.5rem;margin-bottom:.5rem;}
+.confirm-title{font-family:'Syne',sans-serif;font-size:1.2rem;font-weight:700;color:var(--green-dark);margin-bottom:.25rem;}
+.confirm-detail{font-size:13px;color:var(--green);}
+.confirm-code{font-family:monospace;font-size:1.5rem;font-weight:700;color:var(--green-dark);letter-spacing:.15em;margin:.5rem 0;background:#fff;border-radius:8px;padding:8px 24px;display:inline-block;}
+
+/* â”€â”€ RESERVATION TABLE â”€â”€ */
+.res-item{background:var(--surface2);border-radius:var(--r);padding:10px 14px;display:flex;align-items:center;gap:12px;font-size:13px;margin-bottom:7px;}
+.res-slot{background:var(--amber-light);color:var(--amber);border:1px solid #e8c060;border-radius:6px;padding:4px 10px;font-weight:700;font-size:12px;flex-shrink:0;}
+.res-info{flex:1;}
+.res-name{font-weight:600;color:var(--ink);}
+.res-detail{font-size:12px;color:var(--ink4);}
+.res-timer{background:var(--amber-light);color:var(--amber);border:1px solid #e8c060;border-radius:100px;padding:2px 10px;font-size:11px;font-weight:600;white-space:nowrap;}
+
+
+/* â”€â”€ RESPONSIVE â”€â”€ */
+@media(max-width:768px){
+  .landing-hero{flex-direction:column;}
+  .landing-left{padding:3rem 1.5rem 2rem;}
+  .landing-right{width:100%;border-left:none;border-top:1px solid rgba(255,255,255,.07);padding:2rem 1.5rem;}
+  .metrics-row{grid-template-columns:repeat(2,1fr);}
+  .two-col,.report-grid{grid-template-columns:1fr;}
+  .slot-grid{grid-template-columns:repeat(7,1fr);}
+  .nav-links{display:none;}
+  .main-content{padding:1rem;}
+}
+</style>
+</head>
+<body>
+
+
+<!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+     LANDING / LOGIN PAGE
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+<div id="page-landing" class="page active">
+  <div class="landing-hero">
+    <div class="landing-left">
+      <div class="landing-badge"><span class="pulse"></span> Real-time parking management</div>
+      <h1 class="landing-h1">Smart parking<br>for <span>malls &amp;<br>restaurants</span></h1>
+      <p class="landing-sub">ParkSync combines online booking with manual walk-in entry â€” one centralized system that keeps every slot tracked, every vehicle accounted for.</p>
+
+      <div class="feature-pills">
+        <span class="pill">âœ¦ Real-time slot tracking</span>
+        <span class="pill">âœ¦ Online reservations</span>
+        <span class="pill">âœ¦ Walk-in management</span>
+        <span class="pill">âœ¦ Auto timeout release</span>
+        <span class="pill">âœ¦ Reports &amp; analytics</span>
+      </div>
+      <div class="landing-stats">
+        <div class="lstat"><span class="lstat-val">68</span><span class="lstat-label">Total slots</span></div>
+        <div class="lstat"><span class="lstat-val">15m</span><span class="lstat-label">Auto-release</span></div>
+        <div class="lstat"><span class="lstat-val">2</span><span class="lstat-label">Floors</span></div>
+      </div>
+    </div>
+    <div class="landing-right">
+      <div class="login-card">
+        <div class="login-logo">
+          <div class="login-logo-icon">
+            <svg viewBox="0 0 24 24"><path d="M17 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V5a2 2 0 00-2-2zm-5 3a3 3 0 110 6 3 3 0 010-6zm0 2a1 1 0 100 2 1 1 0 000-2zM5 17h14v1H5v-1z"/></svg>
+          </div>
+          <div>
+            <div class="login-logo-text">ParkSync</div>
+            <div class="login-logo-sub">Sign in to continue</div>
+          </div>
+        </div>
+        <div class="login-tabs">
+
+          <button class="login-tab active" onclick="setLoginRole('user',this)">User</button>
+          <button class="login-tab" onclick="setLoginRole('admin',this)">Admin / Staff</button>
+        </div>
+        <div class="login-field">
+          <label>Username</label>
+          <input type="text" id="login-user" placeholder="Enter your username">
+          <div class="login-hint" id="login-hint-user">Demo: user1 / user2 / user3</div>
+        </div>
+        <div class="login-field">
+          <label>Password</label>
+          <input type="password" id="login-pass" placeholder="Enter your password" onkeydown="if(event.key==='Enter')doLogin()">
+          <div class="login-hint" id="login-hint-pass">Demo password: 1234</div>
+        </div>
+        <button class="btn-login" onclick="doLogin()">Sign In â†’</button>
+        <div class="login-err" id="login-err">Invalid credentials. Please try again.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+     USER APP
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+<div id="page-user" class="page">
+  <div class="app-shell">
+    <nav class="topnav">
+
+      <a class="nav-logo" href="#">
+        <div class="nav-logo-icon"><svg viewBox="0 0 24 24"><path d="M17 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V5a2 2 0 00-2-2zm-5 3a3 3 0 110 6 3 3 0 010-6zm0 2a1 1 0 100 2 1 1 0 000-2zM5 17h14v1H5v-1z"/></svg></div>
+        <span class="nav-logo-name">ParkSync</span>
+      </a>
+      <div class="nav-sep"></div>
+      <div class="nav-links">
+        <button class="nav-link active" onclick="userSection('availability',this)">Availability</button>
+        <button class="nav-link" onclick="userSection('book',this)">Book a Slot</button>
+        <button class="nav-link" onclick="userSection('mybookings',this)">My Bookings</button>
+
+      </div>
+      <div class="nav-right">
+        <span class="live-dot"></span><span class="live-label">Live</span>
+        <div class="nav-sep"></div>
+        <div class="nav-user">
+          <div class="nav-avatar" id="u-avatar">U</div>
+          <div><div class="nav-username" id="u-name">User</div><div class="nav-role">Guest</div></div>
+        </div>
+        <button class="btn-logout" onclick="logout()">Sign out</button>
+      </div>
+    </nav>
+    <div class="main-content">
+
+      <!-- AVAILABILITY -->
+      <div id="u-availability">
+        <div class="page-header">
+
+          <div class="page-title">Parking Availability</div>
+          <div class="page-sub">Select a slot to view details or proceed to booking</div>
+        </div>
+        <div class="metrics-row">
+          <div class="metric-card green"><div class="metric-label">Available</div><div class="metric-val green" id="u-cnt-avail">â€”</div><div class="metric-sub">Ready to book</div></div>
+          <div class="metric-card red"><div class="metric-label">Occupied</div><div class="metric-val red" id="u-cnt-occ">â€”</div><div class="metric-sub">Currently in use</div></div>
+          <div class="metric-card amber"><div class="metric-label">Reserved</div><div class="metric-val amber" id="u-cnt-res">â€”</div><div class="metric-sub">Online bookings</div></div>
+
+          <div class="metric-card blue"><div class="metric-label">Utilization</div><div class="metric-val blue" id="u-cnt-util">â€”</div><div class="metric-sub" style="margin-top:2px">of total capacity</div><div class="progress-bar"><div class="progress-fill blue" id="u-util-bar" style="width:0"></div></div></div>
+        </div>
+        <div class="card">
+          <div class="floor-header">
+            <div class="card-title" style="margin-bottom:0">Floor 1 â€” All Slots</div>
+            <div class="floor-badge">68 total slots</div>
+          </div>
+          <div class="slot-legend">
+            <div class="legend-item"><div class="legend-dot" style="background:#8dd5b8;border:1.5px solid #8dd5b8"></div>Available</div>
+
+            <div class="legend-item"><div class="legend-dot" style="background:#e8a0a0;border:1.5px solid #e8a0a0"></div>Occupied</div>
+            <div class="legend-item"><div class="legend-dot" style="background:#e8c060;border:1.5px solid #e8c060"></div>Reserved</div>
+          </div>
+          <div class="slot-grid" id="u-slot-grid"></div>
+          <div class="slot-info-bar" id="u-slot-info"></div>
+        </div>
+      </div>
+
+      <!-- BOOK -->
+      <div id="u-book" class="section-hidden">
+        <div class="page-header">
+          <div class="page-title">Book a 
+
+Parking Slot</div>
+          <div class="page-sub">Reserve your slot in advance â€” held for 15 minutes after arrival time</div>
+        </div>
+        <div class="two-col">
+          <div class="card">
+            <div class="card-title">Reservation details</div>
+            <div class="form-row"><label class="form-label">Vehicle number</label><input type="text" id="bk-vehicle" placeholder="e.g. MH 01 AB 1234"></div>
+            <div class="form-row"><label class="form-label">Driver / contact name</label><input type="text" id="bk-name" placeholder="Full name"></div>
+            <div class="form-row"><label class="form-label">Phone number</label><input type="text" id="bk-phone" placeholder="+91 XXXXX XXXXX"></div>
+
+            <div class="form-row"><label class="form-label">Location</label>
+              <select id="bk-location"><option value="mall">Shopping Mall â€” Level 1</option><option value="rest">Restaurant â€” Level 1</option></select>
+            </div>
+            <div class="form-row"><label class="form-label">Duration</label>
+              <select id="bk-dur"><option>1 hour</option><option>2 hours</option><option selected>3 hours</option><option>4 hours</option><option>6 hours</option><option>8 hours</option></select>
+            </div>
+            <div class="form-row"><label class="form-label">Preferred slot (optional)</label>
+              <select id="bk-slot"><option value="">Auto-assign best available</option></select>
+            </div>
+            <div class="btn-row">
+              <button class="btn primary" onclick="makeBooking()">Confirm Reservation</button>
+              <button class="btn" onclick="clearBookingForm()">Clear</button>
+            </div>
+            <div class="msg-err" id="bk-err"></div>
+          </div>
+          <div>
+            <div class="confirm-box" id="bk-confirm">
+              <div class="confirm-icon">âœ…</div>
+              <div class="confirm-title">Reservation Confirmed!</div>
+              <div class="confirm-code" id="bk-code">â€”</div>
+
+              <div class="confirm-detail" id="bk-detail">â€”</div>
+            </div>
+            <div class="card" style="margin-top:1rem">
+              <div class="card-title">Booking policies</div>
+              <div class="qstat-row"><span class="qstat-key">Auto-release timeout</span><span class="qstat-val">15 minutes</span></div>
+              <div class="qstat-row"><span class="qstat-key">Max advance booking</span><span class="qstat-val">Same day only</span></div>
+              <div class="qstat-row"><span class="qstat-key">Cancellation</span><span class="qstat-val">Up to 10 min before</span></div>
+              <div class="qstat-row"><span class="qstat-key">Walk-ins accepted</span><span class="qstat-val">Yes â€” via staff</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- MY BOOKINGS -->
+      <div id="u-mybookings" class="section-hidden">
+        <div class="page-header">
+          <div class="page-title">My Bookings</div>
+          <div class="page-sub">Your active and past reservations</div>
+        </div>
+        <div class="card">
+          <div class="card-title">Active reservations</div>
+          <div id="u-res-list"></div>
+        </div>
+
+        <div class="card" style="margin-top:1rem">
+          <div class="card-title">Booking history</div>
+          <div class="table-wrap">
+            <table id="u-history-table">
+              <thead><tr><th>Booking ID</th><th>Slot</th><th>Vehicle</th><th>Date</th><th>Duration</th><th>Status</th></tr></thead>
+              <tbody id="u-history-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+     ADMIN APP
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• -->
+<div id="page-admin" class="page">
+  <div class="app-shell">
+    <nav class="topnav">
+      <a class="nav-logo" href="#">
+        <div class="nav-logo-icon"><svg viewBox="0 0 24 24"><path d="M17 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V5a2 2 0 00-2-2zm-5 3a3 3 0 110 6 3 3 0 010-6zm0 2a1 1 0 100 2 1 1 0 000-2zM5 17h14v1H5v-1z"/></svg></div>
+        <span class="nav-logo-name">ParkSync</span>
+      </a>
+      <div class="nav-sep"></div>
+      <div class="nav-links">
+
+        <button class="nav-link active" onclick="adminSection('dashboard',this)">Dashboard</button>
+        <button class="nav-link" onclick="adminSection('walkin',this)">Walk-in Entry</button>
+        <button class="nav-link" onclick="adminSection('manage',this)">Manage Slots</button>
+        <button class="nav-link" onclick="adminSection('bookings',this)">All Bookings</button>
+        <button class="nav-link" onclick="adminSection('reports',this)">Reports</button>
+        <button class="nav-link" onclick="adminSection('settings',this)">Settings</button>
+      </div>
+      <div class="nav-right">
+        <span class="live-dot"></span><span 
+
+class="live-label">Live</span>
+        <div class="nav-sep"></div>
+        <div class="nav-user">
+          <div class="nav-avatar" style="background:var(--blue)">A</div>
+          <div><div class="nav-username" id="a-name">Admin</div><div class="nav-role">Administrator</div></div>
+        </div>
+        <button class="btn-logout" onclick="logout()">Sign out</button>
+      </div>
+    </nav>
+    <div class="main-content">
+
+      <!-- DASHBOARD -->
+      <div id="a-dashboard">
+        <div class="page-header">
+          <div class="page-title">Dashboard</div>
+          <div class="page-sub" id="a-datetime">â€”</div>
+        </div>
+        <div class="metrics-row">
+          <div class="metric-card green"><div class="metric-label">Available</div><div class="metric-val green" id="a-cnt-avail">â€”</div><div class="metric-sub">Free slots</div></div>
+          <div class="metric-card red"><div class="metric-label">Occupied</div><div class="metric-val red" id="a-cnt-occ">â€”</div><div class="metric-sub">In use now</div></div>
+          <div class="metric-card amber"><div class="metric-label">Reserved</div><div class="metric-val amber" id="a-cnt-res">â€”</div><div class="metric-sub">Online bookings</div></div>
+          <div class="metric-card blue"><div class="metric-label">Utilization</div><div class="metric-val blue" id="a-cnt-util">â€”</div><div class="progress-bar"><div class="progress-fill blue" id="a-util-bar" style="width:0"></div></div></div>
+        </div>
+        <div class="two-col" style="margin-bottom:1rem;">
+          <div class="card">
+            <div class="card-title">Parking floor â€” all slots</div>
+            <div class="slot-legend">
+              <div class="legend-item"><div class="legend-dot" style="background:#8dd5b8"></div>Available</div>
+              <div class="legend-item"><div class="legend-dot" style="background:#e8a0a0"></div>Occupied</div>
+              <div class="legend-item"><div class="legend-dot" style="background:#e8c060"></div>Reserved</div>
+            </div>
+            <div class="slot-grid" id="a-slot-grid"></div>
+            <div class="slot-info-bar" id="a-slot-info"></div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:1rem;">
+            <div class="card" style="flex:1">
+              <div class="card-title">Recent activity</div>
+              <div class="activity-list" id="a-activity"></div>
+            </div>
+            <div class="card">
+              <div class="card-title">Today at a glance</div>
+              <div class="qstat-row"><span class="qstat-key">Walk-ins today</span><span class="qstat-val" id="qs-walkin">61</span></div>
+              <div class="qstat-row"><span class="qstat-key">Online bookings</span><span class="qstat-val" id="qs-online">34</span></div>
+              <div class="qstat-row"><span class="qstat-key">Auto-released</span><span class="qstat-val" id="qs-released">7</span></div>
+              <div class="qstat-row"><span class="qstat-key">Peak hours</span><span class="qstat-val">11:00â€“13:00</span></div>
+              <div class="qstat-row"><span class="qstat-key">Avg. stay</span><span class="qstat-val">1h 24m</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- WALK-IN -->
+      <div id="a-walkin" class="section-hidden">
+        <div class="page-header">
+          <div class="page-title">Walk-in Entry</div>
+          <div class="page-sub">Record walk-in vehicles and assign slots manually</div>
+        </div>
+        <div class="two-col">
+          <div class="card">
+            <div class="card-title">Register walk-in vehicle</div>
+            <div class="form-row"><label class="form-label">Vehicle number</label><input type="text" id="wi-vehicle" placeholder="e.g. MH 01 AB 5678"></div>
+            <div class="form-row"><label class="form-label">Driver name (optional)</label><input type="text" id="wi-name" placeholder="Name"></div>
+
+            <div class="form-row"><label class="form-label">Location</label>
+              <select id="wi-location"><option>Shopping Mall</option><option>Restaurant</option></select>
+            </div>
+            <div class="form-row"><label class="form-label">Slot assignment</label>
+              <select id="wi-slot"><option value="">Auto-assign best available</option></select>
+            </div>
+            <div class="btn-row">
+              <button class="btn primary" onclick="walkinEntry()">Mark as Occupied</button>
+              <button class="btn" onclick="document.getElementById('wi-vehicle').value='';document.getElementById('wi-name').value=''">Clear</button>
+            </div>
+            <div class="msg-ok" id="wi-ok"></div>
+            <div class="msg-err" id="wi-err"></div>
+          </div>
+          <div class="card">
+            <div class="card-title">Current walk-ins today</div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Slot</th><th>Vehicle</th><th>Name</th><th>Location</th><th>Time in</th></tr></thead>
+                <tbody id="wi-table-body"></tbody>
+              </table>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- MANAGE SLOTS -->
+      <div id="a-manage" class="section-hidden">
+        <div class="page-header">
+          <div class="page-title">Manage Slots</div>
+          <div class="page-sub">Release occupied or reserved slots manually</div>
+        </div>
+        <div class="two-col">
+          <div class="card">
+            <div class="card-title">Release a slot</div>
+            <div class="form-row"><label class="form-label">Select slot to release</label>
+              <select id="mg-slot"><option value="">Select slot</option></select>
+
+            </div>
+            <div class="btn-row">
+              <button class="btn danger" onclick="releaseSlot()">Release Slot</button>
+            </div>
+            <div class="msg-ok" id="mg-ok"></div>
+            <div class="msg-err" id="mg-err"></div>
+          </div>
+          <div class="card">
+            <div class="card-title">Active reservations</div>
+            <div id="a-res-list"></div>
+          </div>
+        </div>
+        <div class="card" style="margin-top:1rem">
+          <div class="card-title">All slots â€” admin view</div>
+
+          <div class="slot-grid" id="mg-slot-grid"></div>
+          <div class="slot-info-bar" id="mg-slot-info"></div>
+        </div>
+      </div>
+
+      <!-- ALL BOOKINGS -->
+      <div id="a-bookings" class="section-hidden">
+        <div class="page-header">
+          <div class="page-title">All Bookings</div>
+          <div class="page-sub">Full record of all reservations and walk-ins</div>
+        </div>
+        <div class="card">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:1rem;flex-wrap:wrap;">
+            <input type="text" id="bk-search" 
+
+placeholder="Search vehicle, name, slotâ€¦" style="padding:8px 13px;border:1px solid var(--border2);border-radius:var(--r);font-size:13px;font-family:'DM Sans',sans-serif;width:260px;outline:none;" oninput="filterBookings()">
+            <select id="bk-filter" style="padding:8px 13px;border:1px solid var(--border2);border-radius:var(--r);font-size:13px;font-family:'DM Sans',sans-serif;outline:none;" onchange="filterBookings()">
+              <option value="">All statuses</option>
+              <option value="Active">Active</option>
+              <option value="Reserved">Reserved</option>
+              <option value="Completed">Completed</option>
+              <option value="Released">Released</option>
+            </select>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>ID</th><th>Type</th><th>Slot</th><th>Vehicle</th><th>Name</th><th>Location</th><th>Duration</th><th>Time</th><th>Status</th></tr></thead>
+              <tbody id="all-bk-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- REPORTS -->
+      <div id="a-reports" class="section-hidden">
+        <div class="page-header">
+          <div class="page-title">Reports 
+
+&amp; Analytics</div>
+          <div class="page-sub">Parking usage insights for today</div>
+        </div>
+        <div class="metrics-row">
+          <div class="metric-card green"><div class="metric-label">Total vehicles today</div><div class="metric-val green">95</div></div>
+          <div class="metric-card blue"><div class="metric-label">Revenue (est.)</div><div class="metric-val blue">â‚¹4,750</div></div>
+          <div class="metric-card amber"><div class="metric-label">Avg. stay</div><div class="metric-val amber">1h 24m</div></div>
+          <div class="metric-card red"><div class="metric-label">Timeouts today</div><div class="metric-val red">7</div></div>
+
+        </div>
+        <div class="report-grid">
+          <div class="chart-box">
+            <div class="chart-title">Hourly occupancy today</div>
+            <div class="bar-chart" id="hourly-chart"></div>
+          </div>
+          <div class="chart-box">
+            <div class="chart-title">Entry type breakdown</div>
+            <div class="donut-wrap">
+              <svg width="120" height="120" viewBox="0 0 120 120">
+                <circle cx="60" cy="60" r="44" fill="none" stroke="#eeede9" stroke-width="18"/>
+                <circle cx="60" cy="60" r="44" fill="none" stroke="#1aad78" stroke-width="18" stroke-dasharray="174 102" stroke-dashoffset="0" 
+
+transform="rotate(-90 60 60)"/>
+                <circle cx="60" cy="60" r="44" fill="none" stroke="#3a7dd4" stroke-width="18" stroke-dasharray="102 174" stroke-dashoffset="-174" transform="rotate(-90 60 60)"/>
+                <text x="60" y="56" text-anchor="middle" font-size="16" font-weight="700" fill="#141414" font-family="Syne,sans-serif">95</text>
+                <text x="60" y="70" text-anchor="middle" font-size="10" fill="#6b6b6b" font-family="DM Sans,sans-serif">total</text>
+              </svg>
+              <div class="donut-legend">
+                <div class="donut-legend-item"><div class="donut-dot" style="background:#1aad78"></div>Walk-ins<span class="donut-val">61</span></div>
+
+                <div class="donut-legend-item"><div class="donut-dot" style="background:#3a7dd4"></div>Online bookings<span class="donut-val">34</span></div>
+              </div>
+            </div>
+          </div>
+          <div class="chart-box">
+            <div class="chart-title">Occupancy by location</div>
+            <div class="bar-chart">
+              <div class="bar-row"><span class="bar-label">Mall</span><div class="bar-track"><div class="bar-fill green-b" style="width:68%"><span>68%</span></div></div></div>
+              <div class="bar-row"><span class="bar-label">Restaurant</span><div class="bar-track"><div class="bar-fill amber-b" style="width:82%"><span>82%</span></div></div></div>
+            </div>
+          </div>
+          <div class="chart-box">
+            <div class="chart-title">Weekly trend (slots used)</div>
+            <div class="bar-chart" id="weekly-chart"></div>
+          </div>
+        </div>
+        <div class="card summary-table-wrap" style="padding:0;overflow:hidden;">
+          <div style="padding:1.25rem 1.5rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
+            <div class="card-title" style="margin-bottom:0">Daily summary log</div>
+            <button class="btn" onclick="exportCSV()">Export CSV</button>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Date</th><th>Total in</th><th>Walk-ins</th><th>Online</th><th>Peak util.</th><th>Auto-released</th><th>Avg stay</th></tr></thead>
+              <tbody id="summary-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- SETTINGS -->
+      <div id="a-settings" class="section-hidden">
+        <div class="page-header">
+          <div class="page-title">Settings</div>
+
+          <div class="page-sub">Configure system behaviour and parking rules</div>
+        </div>
+        <div class="two-col">
+          <div class="card">
+            <div class="card-title">Timeout &amp; release settings</div>
+            <div class="form-row">
+              <label class="form-label">Auto-release timeout (minutes)</label>
+              <input type="range" id="timeout-slider" min="5" max="60" value="15" step="5"
+                style="width:100%;accent-color:var(--green);margin-top:4px;"
+                oninput="document.getElementById('timeout-disp').textContent=this.value+' min';document.getElementById('qs-timeout2').textContent=this.value+' min'">
+              <div style="font-size:14px;font-weight:600;color:var(--green);margin-top:6px;" id="timeout-disp">15 min</div>
+            </div>
+            <div class="form-row">
+              <label class="form-label">Max booking duration (hours)</label>
+              <select><option>4</option><option selected>8</option><option>12</option><option>24</option></select>
+            </div>
+            <div class="form-row">
+              <label class="form-label">Allow same-day booking only</label>
+              <select><option selected>Yes</option><option>No â€” advance booking allowed</option></select>
+            </div>
+            <button class="btn primary" onclick="showSettingsSaved('set-ok1')">Save changes</button>
+
+            <div class="msg-ok" id="set-ok1">Settings saved.</div>
+          </div>
+          <div class="card">
+            <div class="card-title">Location &amp; slot configuration</div>
+            <div class="form-row"><label class="form-label">Total slots â€” Mall</label><input type="number" value="40"></div>
+            <div class="form-row"><label class="form-label">Total slots â€” Restaurant</label><input type="number" value="28"></div>
+            <div class="form-row"><label class="form-label">Parking rate (â‚¹/hour)</label><input type="number" value="50"></div>
+            <div class="form-row"><label class="form-label">Location name</label><input type="text" value="ParkSync 
+
+Central â€” Pune"></div>
+            <button class="btn primary" onclick="showSettingsSaved('set-ok2')">Save changes</button>
+            <div class="msg-ok" id="set-ok2">Settings saved.</div>
+          </div>
+          <div class="card">
+            <div class="card-title">User management</div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Username</th><th>Role</th><th>Status</th></tr></thead>
+                <tbody>
+                  <tr><td>admin1</td><td>Administrator</td><td><span class="status-pill sp-avail">Active</span></td></tr>
+                  <tr><td>staff1</td><td>Staff</td><td><span class="status-pill sp-avail">Active</span></td></tr>
+                  <tr><td>user1</td><td>User</td><td><span class="status-pill sp-avail">Active</span></td></tr>
+                  <tr><td>user2</td><td>User</td><td><span class="status-pill sp-avail">Active</span></td></tr>
+                  <tr><td>user3</td><td>User</td><td><span class="status-pill sp-occ">Inactive</span></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title">System info</div>
+            <div class="qstat-row"><span class="qstat-key">System version</span><span class="qstat-val">ParkSync 
+
+v2.1</span></div>
+            <div class="qstat-row"><span class="qstat-key">Timeout window</span><span class="qstat-val" id="qs-timeout2">15 min</span></div>
+            <div class="qstat-row"><span class="qstat-key">Total slots</span><span class="qstat-val">68</span></div>
+            <div class="qstat-row"><span class="qstat-key">Locations</span><span class="qstat-val">Mall + Restaurant</span></div>
+            <div class="qstat-row"><span class="qstat-key">Database</span><span class="qstat-val">In-memory (demo)</span></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+</div>
+
+<script>
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â• DATA â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+const TOTAL = 68;
+let slots = [], activities = [], allBookings = [], walkins = [], userBookings = [];
+let currentUser = null, currentRole = null, loginRole = 'user';
+
+const USERS = {
+  user1:{pass:'1234',role:'user',name:'Arjun Mehta'},
+  user2:{pass:'1234',role:'user',name:'Priya Sharma'},
+  user3:{pass:'1234',role:'user',name:'Rahul Verma'},
+  admin1:{pass:'1234',role:'admin',name:'Admin'},
+
+  staff1:{pass:'1234',role:'admin',name:'Staff'},
+};
+
+function rnd(a){return a[Math.floor(Math.random()*a.length)];}
+function randomPlate(){return rnd(['MH','DL','KA','TN','GJ'])+' '+rnd(['01','02','03','05'])+' '+rnd(['AB','CD','EF','GH'])+' '+(Math.floor(Math.random()*9000)+1000);}
+function randomName(){return rnd(['Amit K.','Priya S.','Rahul M.','Sneha P.','Vijay R.','Kavya T.','Arjun D.','Meena L.','Rohan B.','Nisha T.']);}
+function slotLabel(id){return 'P'+(id<=9?'0':'')+id;}
+function genId(){return 'BK'+Math.random().toString(36).substr(2,6).toUpperCase();}
+function nowTime(){return new 
+
+Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});}
+function nowDate(){return new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});}
+
+function initSlots(){
+  slots=[];
+  for(let i=0;i<TOTAL;i++){
+    const r=Math.random();
+    let status=r<0.47?'available':r<0.88?'occupied':'reserved';
+    if(i<4)status='available';
+    const vehicle=status==='occupied'?randomPlate():'';
+    const bookedBy=status==='reserved'?randomName():'';
+    const timer=status==='reserved'?Math.floor(Math.random()*13+2):null;
+    const loc=i<40?'Mall':'Restaurant';
+
+    slots.push({id:i+1,status,vehicle,bookedBy,timer,loc,type:status==='occupied'?'Walk-in':'Online'});
+  }
+  activities=[
+    {type:'check-in',text:'MH 01 AB 3345 checked in â€” slot P14',time:'2 min ago'},
+    {type:'reserve',text:'Online booking confirmed â€” P22 by Priya S.',time:'5 min ago'},
+    {type:'release',text:'Slot P07 auto-released after timeout',time:'12 min ago'},
+    {type:'check-out',text:'MH 02 CD 7890 checked out â€” slot P31',time:'18 min ago'},
+    {type:'check-in',text:'MH 03 EF 1122 checked in â€” slot P05',time:'24 min ago'},
+    {type:'reserve',text:'Walk-in assigned to slot P41',time:'31 min ago'},
+  ];
+  
+
+walkins=slots.filter(s=>s.status==='occupied').slice(0,8).map(s=>({slot:s.id,vehicle:s.vehicle,name:randomName(),loc:s.loc,time:nowTime()}));
+  allBookings=[
+    ...slots.filter(s=>s.status==='occupied').slice(0,5).map(s=>({id:genId(),type:'Walk-in',slot:s.id,vehicle:s.vehicle,name:randomName(),loc:s.loc,dur:'â€”',time:nowTime(),status:'Active'})),
+    ...slots.filter(s=>s.status==='reserved').slice(0,5).map(s=>({id:genId(),type:'Online',slot:s.id,vehicle:'â€”',name:s.bookedBy,loc:s.loc,dur:'3 hrs',time:nowTime(),status:'Reserved'})),
+    {id:genId(),type:'Online',slot:12,vehicle:'MH 02 CD 9900',name:'Vikas P.',loc:'Mall',dur:'2 hrs',time:'10:30',status:'Completed'},
+    {id:genId(),type:'Walk-in',slot:33,vehicle:'DL 05 EF 3311',name:'Sneha R.',loc:'Restaurant',dur:'â€”',time:'09:15',status:'Completed'},
+    {id:genId(),type:'Online',slot:8,vehicle:'KA 09 GH 7722',name:'Meera L.',loc:'Mall',dur:'1 hr',time:'08:45',status:'Released'},
+  ];
+}
+
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â• LOGIN â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+function setLoginRole(role,btn){
+  loginRole=role;
+  document.querySelectorAll('.login-tab').forEach(t=>t.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('login-hint-user').textContent=role==='user'?'Demo: user1 / user2 / user3':'Demo: admin1 / staff1';
+}
+
+function doLogin(){
+  const u=document.getElementById('login-user').value.trim();
+  const p=document.getElementById('login-pass').value.trim();
+  const err=document.getElementById('login-err');
+  const data=USERS[u];
+  if(!data||data.pass!==p){err.style.display='block';return;}
+  if(loginRole==='user'&&data.role!=='user'){err.textContent='This account is admin. Use Admin tab.';err.style.display='block';return;}
+  if(loginRole==='admin'&&data.role!=='admin'){err.textContent='This account is a user. Use User tab.';err.style.display='block';return;}
+  err.style.display='none';
+  currentUser=u; currentRole=data.role;
+  if(data.role==='user'){
+    document.getElementById('u-avatar').textContent=data.name[0];
+    document.getElementById('u-name').textContent=data.name;
+    showPage('page-user');
+    updateUserMetrics();
+    renderUserGrid();
+    populateUserSlotSelect();
+    renderUserBookings();
+  } else {
+    document.getElementById('a-name').textContent=data.name;
+    showPage('page-admin');
+    updateAdminMetrics();
+    renderAdminGrid();
+    renderAdminActivity();
+    populateAdminSelects();
+
+    renderAdminReservations();
+    renderWalkinTable();
+    renderAllBookings();
+    renderReports();
+    renderSummaryTable();
+    updateDateTime();
+    setInterval(updateDateTime,30000);
+  }
+}
+
+function logout(){
+  currentUser=null; currentRole=null;
+  document.getElementById('login-user').value='';
+  document.getElementById('login-pass').value='';
+  document.getElementById('login-err').style.display='none';
+  showPage('page-landing');
+}
+
+function showPage(id){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â• SECTION SWITCHING â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+function userSection(id,btn){
+  ['u-availability','u-book','u-mybookings'].forEach(s=>{
+    const el=document.getElementById(s);
+    if(el) el.className=s==='u-'+id?'':'section-hidden';
+  });
+  document.querySelectorAll('#page-user .nav-link').forEach(l=>l.classList.remove('active')
+
+);
+  btn.classList.add('active');
+  if(id==='mybookings') renderUserBookings();
+}
+
+function adminSection(id,btn){
+  ['a-dashboard','a-walkin','a-manage','a-bookings','a-reports','a-settings'].forEach(s=>{
+    const el=document.getElementById(s);
+    if(el) el.className=s==='a-'+id?'':'section-hidden';
+  });
+  document.querySelectorAll('#page-admin .nav-link').forEach(l=>l.classList.remove('active'));
+  btn.classList.add('active');
+  if(id==='manage'){populateAdminSelects();renderAdminReservations();renderManageGrid();}
+  if(id==='bookings')renderAllBookings();
+}
+
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â• METRICS â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+function counts(){
+  return {
+    avail:slots.filter(s=>s.status==='available').length,
+    occ:slots.filter(s=>s.status==='occupied').length,
+    res:slots.filter(s=>s.status==='reserved').length,
+  };
+}
+function updateUserMetrics(){
+  const 
+
+c=counts(),util=Math.round((c.occ+c.res)/TOTAL*100);
+  document.getElementById('u-cnt-avail').textContent=c.avail;
+  document.getElementById('u-cnt-occ').textContent=c.occ;
+  document.getElementById('u-cnt-res').textContent=c.res;
+  document.getElementById('u-cnt-util').textContent=util+'%';
+  document.getElementById('u-util-bar').style.width=util+'%';
+}
+function updateAdminMetrics(){
+  const c=counts(),util=Math.round((c.occ+c.res)/TOTAL*100);
+  document.getElementById('a-cnt-avail').textContent=c.avail;
+  document.getElementById('a-cnt-occ').textContent=c.occ;
+
+  document.getElementById('a-cnt-res').textContent=c.res;
+  document.getElementById('a-cnt-util').textContent=util+'%';
+  document.getElementById('a-util-bar').style.width=util+'%';
+}
+function updateAllMetrics(){updateUserMetrics();updateAdminMetrics();}
+
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â• GRIDS â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+function renderGrid(containerId, clickFn){
+  const g=document.getElementById(containerId);
+  if(!g)return;
+  g.innerHTML='';
+  slots.forEach(slot=>{
+    const el=document.createElement('div');
+    el.className='slot '+slot.status;
+
+    el.innerHTML=`<span class="slot-lbl">${slotLabel(slot.id)}</span>${slot.timer?`<span class="slot-tmr">${slot.timer}m</span>`:''}`;
+    if(clickFn)el.onclick=()=>clickFn(slot);
+    g.appendChild(el);
+  });
+}
+function renderUserGrid(){renderGrid('u-slot-grid',showUserSlotInfo);}
+function renderAdminGrid(){renderGrid('a-slot-grid',showAdminSlotInfo);}
+function renderManageGrid(){renderGrid('mg-slot-grid',showManageSlotInfo);}
+
+function slotInfoHTML(slot){
+  const map={available:'Available âœ“',occupied:'Occupied',reserved:'Reserved'};
+  let h=`<strong>${slotLabel(slot.id)}</strong> Â· ${slot.loc} Â· Status: <strong>${map[slot.status]}</strong>`;
+  if(slot.vehicle)h+=` Â· Vehicle: <strong>${slot.vehicle}</strong>`;
+  if(slot.bookedBy)h+=` Â· Booked by: <strong>${slot.bookedBy}</strong>`;
+  if(slot.timer)h+=`<span class="timer-pill">Auto-release in ${slot.timer} min</span>`;
+  return h;
+}
+function showUserSlotInfo(slot){const b=document.getElementById('u-slot-info');b.innerHTML=slotInfoHTML(slot);b.classList.add('show');}
+function showAdminSlotInfo(slot){const b=document.getElementById('a-slot-info');b.innerHTML=slotInfoHTML(slot);b.classList.add('show');}
+function showManageSlotInfo(slot){const b=document.getElementById('mg-slot-info');b.innerHTML=slotInfoHTML(slot);b.classList.add('show');}
+
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â• ACTIVITY â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+function renderAdminActivity(){
+  const list=document.getElementById('a-activity');
+  if(!list)return;
+  const colorMap={['check-in']:'green',['check-out']:'blue',reserve:'amber',release:'red'};
+  const labelMap={['check-in']:'Check-in',['check-out']:'Check-out',reserve:'Reserved',release:'Released'};
+  list.innerHTML=activities.map(a=>
+    `<div class="activity-item">
+      <span class="abadge ${colorMap[a.type]}">${labelMap[a.type]}</span>
+      <span class="atext">${a.text}</span>
+
+      <span class="atime">${a.time}</span>
+    </div>`
+  ).join('');
+}
+
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â• USER BOOKING â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+function populateUserSlotSelect(){
+  const avail=slots.filter(s=>s.status==='available');
+  document.getElementById('bk-slot').innerHTML='<option value="">Auto-assign best available</option>'
+    +avail.map(s=>`<option value="${s.id}">${slotLabel(s.id)} â€” ${s.loc}</option>`).join('');
+}
+
+function makeBooking(){
+  const vehicle=document.getElementById('bk-vehicle').value.trim();
+  const name=document.getElementById('bk-name').value.trim();
+  const phone=document.getElementById('bk-phone').value.trim();
+  const err=document.getElementById('bk-err');
+  if(!vehicle||!name||!phone){err.textContent='Please fill in all required fields.';err.style.display='block';return;}
+  const avail=slots.filter(s=>s.status==='available');
+  if(!avail.length){err.textContent='No available slots right now.';err.style.display='block';return;}
+  err.style.display='none';
+  const slotIdPref=parseInt(document.getElementById('bk-slot').value)||0;
+
+  const chosen=slotIdPref?slots.find(s=>s.id===slotIdPref&&s.status==='available')||avail[0]:avail[0];
+  const dur=document.getElementById('bk-dur').value;
+  const loc=document.getElementById('bk-location').value==='mall'?'Mall':'Restaurant';
+  const bkId=genId();
+  chosen.status='reserved';chosen.bookedBy=name;chosen.timer=15;chosen.loc=loc;chosen.type='Online';
+  const entry={id:bkId,type:'Online',slot:chosen.id,vehicle,name,loc,dur,time:nowTime(),status:'Reserved'};
+  allBookings.unshift(entry);
+  userBookings.unshift({...entry});
+  activities.unshift({type:'reserve',text:`Online booking by ${name} â€” slot ${slotLabel(chosen.id)}`,time:'just now'});
+  document.getElementById('bk-code').textContent=bkId;
+  document.getElementById('bk-detail').textContent=`Slot ${slotLabel(chosen.id)} Â· ${loc} Â· ${dur} Â· Hold expires in 15 min`;
+  document.getElementById('bk-confirm').classList.add('show');
+  document.getElementById('qs-online').textContent=parseInt(document.getElementById('qs-online').textContent)+1;
+  updateAllMetrics();renderAdminGrid();renderUserGrid();renderAdminActivity();populateUserSlotSelect();populateAdminSelects();renderAdminReservations();
+}
+
+function clearBookingForm(){
+  ['bk-vehicle','bk-name','bk-phone'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
+  document.getElementById('bk-confirm').classList.remove('show');
+  document.getElementById('bk-err').style.display='none';
+}
+
+function renderUserBookings(){
+  const resEl=document.getElementById('u-res-list');
+  const active=userBookings.filter(b=>b.status==='Reserved');
+  resEl.innerHTML=active.length?active.map(b=>`
+    <div class="res-item">
+      <span class="res-slot">${slotLabel(b.slot)}</span>
+      <div class="res-info"><div class="res-name">${b.name}</div><div class="res-detail">${b.vehicle} Â· ${b.loc} Â· ${b.dur}</div></div>
+      <span class="res-timer">15 min left</span>
+    </div>`).join(''):'<div style="font-size:13px;color:var(--ink4)">No active reservations.</div>';
+  const hist=document.getElementById('u-history-body');
+  if(hist)hist.innerHTML=userBookings.map(b=>`
+    <tr><td>${b.id}</td><td>${slotLabel(b.slot)}</td><td>${b.vehicle}</td><td>${nowDate()}</td><td>${b.dur}</td>
+    <td><span class="status-pill ${b.status==='Reserved'?'sp-res':b.status==='Active'?'sp-occ':'sp-avail'}">${b.status}</span></td></tr>`).join('');
+}
+
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â• ADMIN OPERATIONS â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+function populateAdminSelects(){
+  const avail=slots.filter(s=>s.status==='available');
+  const taken=slots.filter(s=>s.status!=='available');
+  const wiSel=document.getElementById('wi-slot');
+  if(wiSel)wiSel.innerHTML='<option value="">Auto-assign best available</option>'+avail.map(s=>`<option value="${s.id}">${slotLabel(s.id)} â€” ${s.loc}</option>`).join('');
+  const mgSel=document.getElementById('mg-slot');
+  if(mgSel)mgSel.innerHTML='<option value="">Select slot</option>'+taken.map(s=>`<option value="${s.id}">${slotLabel(s.id)} â€” ${s.status} (${s.vehicle||s.bookedBy||'reserved'})</option>`).join('');
+}
+
+function renderAdminReservations(){
+  const res=slots.filter(s=>s.status==='reserved').slice(0,8);
+  const html=res.length?res.map(s=>`
+    <div class="res-item">
+      <span class="res-slot">${slotLabel(s.id)}</span>
+      <div class="res-info"><div class="res-name">${s.bookedBy||'â€”'}</div><div class="res-detail">${s.loc}</div></div>
+      <span class="res-timer">${s.timer||15}m left</span>
+    </div>`).join(''):'<div style="font-size:13px;color:var(--ink4)">No active reservations.</div>';
+  ['a-res-list'].forEach(id=>{const el=document.getElementById(id);if(el)el.innerHTML=html;});
+}
+
+function walkinEntry(){
+  const vehicle=document.getElementById('wi-vehicle').value.trim();
+  if(!vehicle){showMsg('wi-err','wi-ok','Please enter a vehicle number.');return;}
+  const avail=slots.filter(s=>s.status==='available');
+  if(!avail.length){showMsg('wi-err','wi-ok','No available slots.');return;}
+  const slotId=parseInt(document.getElementById('wi-slot').value)||0;
+  const chosen=slotId?
+
+slots.find(s=>s.id===slotId&&s.status==='available')||avail[0]:avail[0];
+  const name=document.getElementById('wi-name').value.trim()||'â€”';
+  const loc=document.getElementById('wi-location').value;
+  chosen.status='occupied';chosen.vehicle=vehicle;chosen.type='Walk-in';chosen.loc=loc;
+  const entry={id:genId(),type:'Walk-in',slot:chosen.id,vehicle,name,loc,dur:'â€”',time:nowTime(),status:'Active'};
+  allBookings.unshift(entry);
+  walkins.unshift({slot:chosen.id,vehicle,name,loc,time:nowTime()});
+  activities.unshift({type:'check-in',text:`Walk-in: ${vehicle} â€” slot ${slotLabel(chosen.id)}`,time:'just now'});
+
+  document.getElementById('qs-walkin').textContent=parseInt(document.getElementById('qs-walkin').textContent)+1;
+  showMsg('wi-ok','wi-err',`${vehicle} assigned to slot ${slotLabel(chosen.id)}.`);
+  document.getElementById('wi-vehicle').value='';document.getElementById('wi-name').value='';
+  updateAllMetrics();renderAdminGrid();renderUserGrid();renderAdminActivity();populateAdminSelects();renderWalkinTable();renderAllBookings();
+}
+
+function releaseSlot(){
+  const sel=document.getElementById('mg-slot');
+  const id=parseInt(sel.value);
+  if(!id){showMsg('mg-err','mg-ok','Please select a slot.');return;}
+
+  const slot=slots.find(s=>s.id===id);
+  if(!slot){showMsg('mg-err','mg-ok','Slot not found.');return;}
+  activities.unshift({type:'release',text:`Slot ${slotLabel(id)} released (${slot.vehicle||slot.bookedBy||'reserved'})`,time:'just now'});
+  allBookings.filter(b=>b.slot===id&&(b.status==='Active'||b.status==='Reserved')).forEach(b=>b.status='Released');
+  slot.status='available';slot.vehicle='';slot.bookedBy='';slot.timer=null;
+  document.getElementById('qs-released').textContent=parseInt(document.getElementById('qs-released').textContent)+1;
+  showMsg('mg-ok','mg-err',`Slot ${slotLabel(id)} is now available.`);
+
+  updateAllMetrics();renderAdminGrid();renderManageGrid();renderUserGrid();renderAdminActivity();populateAdminSelects();populateUserSlotSelect();renderAdminReservations();renderAllBookings();
+}
+
+function renderWalkinTable(){
+  const body=document.getElementById('wi-table-body');
+  if(!body)return;
+  body.innerHTML=walkins.slice(0,10).map(w=>`<tr><td><strong>${slotLabel(w.slot)}</strong></td><td>${w.vehicle}</td><td>${w.name}</td><td>${w.loc}</td><td>${w.time}</td></tr>`).join('');
+}
+
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â• ALL BOOKINGS â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+function renderAllBookings(data){
+  const body=document.getElementById('all-bk-body');
+  if(!body)return;
+  const rows=data||allBookings;
+  body.innerHTML=rows.map(b=>{
+    const sp=b.status==='Active'?'sp-occ':b.status==='Reserved'?'sp-res':'sp-avail';
+    return `<tr><td><code>${b.id}</code></td><td>${b.type}</td><td><strong>${slotLabel(b.slot)}</strong></td><td>${b.vehicle}</td><td>${b.name}</td><td>${b.loc}</td><td>${b.dur}</td><td>${b.time}</td><td><span class="status-pill ${sp}">${b.status}</span></td></tr>`;
+  }).join('');
+}
+
+
+function filterBookings(){
+  const q=document.getElementById('bk-search').value.toLowerCase();
+  const f=document.getElementById('bk-filter').value;
+  const filtered=allBookings.filter(b=>{
+    const match=!q||(b.id+b.vehicle+b.name+b.loc+slotLabel(b.slot)).toLowerCase().includes(q);
+    const flt=!f||b.status===f;
+    return match&&flt;
+  });
+  renderAllBookings(filtered);
+}
+
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â• REPORTS â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+function renderReports(){
+  const hourly=document.getElementById('hourly-chart');
+  if(!hourly)return;
+  const hours=[['8am',35],['9am',52],['10am',68],['11am',85],['12pm',92],['1pm',88],['2pm',74],['3pm',60],['4pm',55],['5pm',70],['6pm',80],['7pm',65]];
+  hourly.innerHTML=hours.map(([h,v])=>
+    `<div class="bar-row"><span class="bar-label">${h}</span><div class="bar-track"><div class="bar-fill green-b" style="width:${v}%"><span>${v}%</span></div></div></div>`
+  ).join('');
+  const weekly=document.getElementById('weekly-chart');
+  if(weekly){
+    const days=[['Mon',58],['Tue',62],['Wed',71],['Thu',65],['Fri',88],['Sat',95],['Sun',80]];
+    weekly.innerHTML=days.map(([d,v])=>
+
+      `<div class="bar-row"><span class="bar-label">${d}</span><div class="bar-track"><div class="bar-fill blue-b" style="width:${v}%"><span>${v}</span></div></div></div>`
+    ).join('');
+  }
+}
+
+function renderSummaryTable(){
+  const body=document.getElementById('summary-body');
+  if(!body)return;
+  const rows=[
+    ['Today',95,61,34,'92%',7,'1h 24m'],
+    ['Yesterday',88,55,33,'88%',5,'1h 18m'],
+    ['2 days ago',76,47,29,'80%',3,'1h 10m'],
+    ['3 days ago',82,53,29,'84%',6,'1h 22m'],
+    ['4 days ago',91,60,31,'90%',4,'1h 30m'],
+    ['5 days ago',68,42,26,'70%',2,'58m'],
+
+    ['6 days ago',55,35,20,'58%',1,'52m'],
+  ];
+  body.innerHTML=rows.map(([d,t,w,o,p,r,a])=>`<tr><td>${d}</td><td><strong>${t}</strong></td><td>${w}</td><td>${o}</td><td>${p}</td><td>${r}</td><td>${a}</td></tr>`).join('');
+}
+
+function exportCSV(){
+  const rows=[['Date','Total','Walk-ins','Online','Peak','Released','AvgStay'],
+    ['Today','95','61','34','92%','7','1h24m'],['Yesterday','88','55','33','88%','5','1h18m'],
+    ['2 days ago','76','47','29','80%','3','1h10m']];
+  const csv=rows.map(r=>r.join(',')).join('\n');
+  const a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
+
+  a.download='parksync-report.csv';a.click();
+}
+
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â• HELPERS â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+function showMsg(okId,errId,text){
+  const ok=document.getElementById(okId),err=document.getElementById(errId);
+  if(ok){ok.textContent=text;ok.style.display='block';setTimeout(()=>ok.style.display='none',3500);}
+  if(err)err.style.display='none';
+}
+function showSettingsSaved(id){const el=document.getElementById(id);el.style.display='block';setTimeout(()=>el.style.display='none',3000);}
+function updateDateTime(){const el=document.getElementById('a-datetime');if(el)el.textContent=new Date().toLocaleString('en-IN',{weekday:'long',year:'numeric',month:'long',day:'numeric',hour:'2-digit',minute:'2-digit'});}
+
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â• INIT â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+initSlots();
+</script>
+</body>
+</html>
+
+
+
