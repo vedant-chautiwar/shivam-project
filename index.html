@@ -900,44 +900,70 @@ function doLogin(){
   if(loginRole==='user'&&data.role!=='user'){err.textContent='This account is admin. Use Admin tab.';err.style.display='block';return;}
   if(loginRole==='admin'&&data.role!=='admin'){err.textContent='This account is a user. Use User tab.';err.style.display='block';return;}
   err.style.display='none';
-  currentUser=u; currentRole=data.role;
-  if(data.role==='user'){
-    document.getElementById('u-avatar').textContent=data.name[0];
-    document.getElementById('u-name').textContent=data.name;
-    showPage('page-user');
-    updateUserMetrics();
-    renderUserGrid();
-    populateUserSlotSelect();
-    renderUserBookings();
-  } else {
-    document.getElementById('a-name').textContent=data.name;
-    showPage('page-admin');
-    updateAdminMetrics();
-    renderAdminGrid();
-    renderAdminActivity();
-    populateAdminSelects();
-
-    renderAdminReservations();
-    renderWalkinTable();
-    renderAllBookings();
-    renderReports();
-    renderSummaryTable();
-    updateDateTime();
-    setInterval(updateDateTime,30000);
-  }
+  sessionStorage.setItem('parksync_user',u);
+  sessionStorage.setItem('parksync_role',data.role);
+  const targetPage=data.role==='user'?'user':'admin';
+  window.location.href=`${window.location.pathname}?page=${targetPage}`;
 }
 
 function logout(){
   currentUser=null; currentRole=null;
+  sessionStorage.removeItem('parksync_user');
+  sessionStorage.removeItem('parksync_role');
   document.getElementById('login-user').value='';
   document.getElementById('login-pass').value='';
   document.getElementById('login-err').style.display='none';
-  showPage('page-landing');
+  window.location.href=window.location.pathname;
 }
 
 function showPage(id){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.getElementById(id).classList.add('active');
+}
+
+function startUserView(username){
+  const data=USERS[username];
+  if(!data||data.role!=='user')return false;
+  currentUser=username; currentRole='user';
+  document.getElementById('u-avatar').textContent=data.name[0];
+  document.getElementById('u-name').textContent=data.name;
+  showPage('page-user');
+  updateUserMetrics();
+  renderUserGrid();
+  populateUserSlotSelect();
+  renderUserBookings();
+  return true;
+}
+
+function startAdminView(username){
+  const data=USERS[username];
+  if(!data||data.role!=='admin')return false;
+  currentUser=username; currentRole='admin';
+  document.getElementById('a-name').textContent=data.name;
+  showPage('page-admin');
+  updateAdminMetrics();
+  renderAdminGrid();
+  renderAdminActivity();
+  populateAdminSelects();
+  renderAdminReservations();
+  renderWalkinTable();
+  renderAllBookings();
+  renderReports();
+  renderSummaryTable();
+  updateDateTime();
+  setInterval(updateDateTime,30000);
+  return true;
+}
+
+function bootApp(){
+  initSlots();
+  const params=new URLSearchParams(window.location.search);
+  const page=params.get('page');
+  const username=sessionStorage.getItem('parksync_user');
+  const role=sessionStorage.getItem('parksync_role');
+  if(page==='user'&&role==='user'&&startUserView(username))return;
+  if(page==='admin'&&role==='admin'&&startAdminView(username))return;
+  showPage('page-landing');
 }
 
 /* â•â•â•â•â•â•â•â•â•â•â•â•â•â• SECTION SWITCHING â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
@@ -1238,7 +1264,7 @@ function showSettingsSaved(id){const el=document.getElementById(id);el.style.dis
 function updateDateTime(){const el=document.getElementById('a-datetime');if(el)el.textContent=new Date().toLocaleString('en-IN',{weekday:'long',year:'numeric',month:'long',day:'numeric',hour:'2-digit',minute:'2-digit'});}
 
 /* â•â•â•â•â•â•â•â•â•â•â•â•â•â• INIT â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
-initSlots();
+bootApp();
 </script>
 </body>
 </html>
