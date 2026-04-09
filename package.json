@@ -2,9 +2,10 @@
   "name": "shivam",
   "version": "1.0.0",
   "description": "Shivam parking project",
+  "type": "module",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
+    "start": "node api/server.js",
     "test": "echo \"No tests configured\""
   },
   "repository": {
