@@ -1,17 +1,14 @@
-import fs from "fs";
+import { releaseSlotById } from "./store.js";
 
-const DATA_FILE = "/tmp/store.json";
-
-function readStore() {
-  try {
-    return JSON.parse(fs.readFileSync(DATA_FILE));
-  } catch {
-    return { slots: [] };
+function getSlotId(req) {
+  const url = new URL(req.url, "http://localhost");
+  const queryId = url.searchParams.get("id");
+  if (queryId) {
+    return queryId;
   }
-}
 
-function writeStore(store) {
-  fs.writeFileSync(DATA_FILE, JSON.stringify(store));
+  const match = url.pathname.match(/\/slots\/(\d+)\/release$/);
+  return match ? match[1] : null;
 }
 
 export default function handler(req, res) {
@@ -19,20 +16,12 @@ export default function handler(req, res) {
     return res.status(405).end();
   }
 
-  const id = new URL(req.url, "http://x").searchParams.get("id");
+  const slotId = getSlotId(req);
+  const result = releaseSlotById(slotId);
 
-  const store = readStore();
-  const slot = store.slots.find(s => s.id === Number(id));
-
-  if (!slot) {
-    return res.status(404).json({ error: "Not found" });
+  if (result.error) {
+    return res.status(result.status || 400).json({ error: result.error });
   }
 
-  slot.status = "available";
-  slot.vehicle = "";
-  slot.bookedBy = "";
-
-  writeStore(store);
-
-  res.json({ success: true });
+  return res.status(200).json({ success: true, slot: result.slot });
 }
