@@ -843,6 +843,20 @@ const USERS = {
   staff1:{pass:'1234',role:'admin',name:'Staff'},
 };
 
+function isReservedByCurrentUser(slot){
+  if(!slot || slot.status!=='reserved' || !currentUser) return false;
+  const activeBooking = allBookings.find(b=>b.slot===slot.id && b.type==='Online' && b.status==='Reserved');
+  if(activeBooking && activeBooking.user) return activeBooking.user===currentUser;
+  const me = USERS[currentUser];
+  return !!(me && slot.bookedBy && slot.bookedBy===me.name);
+}
+
+function getUserFacingSlotStatus(slot){
+  if(currentRole!=='user') return slot.status;
+  if(slot.status==='reserved' && !isReservedByCurrentUser(slot)) return 'occupied';
+  return slot.status;
+}
+
 function rnd(a){return a[Math.floor(Math.random()*a.length)];}
 function randomPlate(){return rnd(['MH','DL','KA','TN','GJ'])+' '+rnd(['01','02','03','05'])+' '+rnd(['AB','CD','EF','GH'])+' '+(Math.floor(Math.random()*9000)+1000);}
 function randomName(){return rnd(['Amit K.','Priya S.','Rahul M.','Sneha P.','Vijay R.','Kavya T.','Arjun D.','Meena L.','Rohan B.','Nisha T.']);}
@@ -1134,10 +1148,12 @@ function renderGrid(containerId, clickFn){
   if(!g)return;
   g.innerHTML='';
   slots.forEach(slot=>{
+    const displayStatus = containerId==='u-slot-grid' ? getUserFacingSlotStatus(slot) : slot.status;
     const el=document.createElement('div');
-    el.className='slot '+slot.status;
+    el.className='slot '+displayStatus;
 
-    el.innerHTML=`<span class="slot-lbl">${slotLabel(slot.id)}</span>${slot.timer?`<span class="slot-tmr">${slot.timer}m</span>`:''}`;
+    const showTimer = displayStatus==='reserved' && slot.timer;
+    el.innerHTML=`<span class="slot-lbl">${slotLabel(slot.id)}</span>${showTimer?`<span class="slot-tmr">${slot.timer}m</span>`:''}`;
     if(clickFn)el.onclick=()=>clickFn(slot);
     g.appendChild(el);
   });
@@ -1146,17 +1162,18 @@ function renderUserGrid(){renderGrid('u-slot-grid',showUserSlotInfo);}
 function renderAdminGrid(){renderGrid('a-slot-grid',showAdminSlotInfo);}
 function renderManageGrid(){renderGrid('mg-slot-grid',showManageSlotInfo);}
 
-function slotInfoHTML(slot){
+function slotInfoHTML(slot,userView){
+  const visibleStatus = userView ? getUserFacingSlotStatus(slot) : slot.status;
   const map={available:'Available âœ“',occupied:'Occupied',reserved:'Reserved'};
-  let h=`<strong>${slotLabel(slot.id)}</strong> Â· ${slot.loc} Â· Status: <strong>${map[slot.status]}</strong>`;
+  let h=`<strong>${slotLabel(slot.id)}</strong> Â· ${slot.loc} Â· Status: <strong>${map[visibleStatus]}</strong>`;
   if(slot.vehicle)h+=` Â· Vehicle: <strong>${slot.vehicle}</strong>`;
-  if(slot.bookedBy)h+=` Â· Booked by: <strong>${slot.bookedBy}</strong>`;
-  if(slot.timer)h+=`<span class="timer-pill">Auto-release in ${slot.timer} min</span>`;
+  if(visibleStatus==='reserved' && slot.bookedBy)h+=` Â· Booked by: <strong>${slot.bookedBy}</strong>`;
+  if(visibleStatus==='reserved' && slot.timer)h+=`<span class="timer-pill">Auto-release in ${slot.timer} min</span>`;
   return h;
 }
-function showUserSlotInfo(slot){const b=document.getElementById('u-slot-info');b.innerHTML=slotInfoHTML(slot);b.classList.add('show');}
-function showAdminSlotInfo(slot){const b=document.getElementById('a-slot-info');b.innerHTML=slotInfoHTML(slot);b.classList.add('show');}
-function showManageSlotInfo(slot){const b=document.getElementById('mg-slot-info');b.innerHTML=slotInfoHTML(slot);b.classList.add('show');}
+function showUserSlotInfo(slot){const b=document.getElementById('u-slot-info');b.innerHTML=slotInfoHTML(slot,true);b.classList.add('show');}
+function showAdminSlotInfo(slot){const b=document.getElementById('a-slot-info');b.innerHTML=slotInfoHTML(slot,false);b.classList.add('show');}
+function showManageSlotInfo(slot){const b=document.getElementById('mg-slot-info');b.innerHTML=slotInfoHTML(slot,false);b.classList.add('show');}
 
 /* â•â•â•â•â•â•â•â•â•â•â•â•â•â• ACTIVITY â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 function renderAdminActivity(){
