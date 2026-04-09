@@ -3,7 +3,9 @@ import path from "path";
 
 const TOTAL = 68;
 const AVAILABLE_SLOTS = 50;
-const DATA_FILE = path.join(process.cwd(), "data", "store.json");
+const DATA_FILE = process.env.VERCEL
+  ? "/tmp/store.json"
+  : path.join(process.cwd(), "data", "store.json");
 
 function nowTime() {
   return new Date().toLocaleTimeString("en-IN", {
@@ -66,7 +68,12 @@ function normalizeStore(store) {
 }
 
 function ensureDataDir() {
-  fs.mkdirSync(path.dirname(DATA_FILE), { recursive: true });
+  try {
+    fs.mkdirSync(path.dirname(DATA_FILE), { recursive: true });
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 export function readStore() {
@@ -83,8 +90,13 @@ export function readStore() {
 }
 
 export function writeStore(store) {
-  ensureDataDir();
-  fs.writeFileSync(DATA_FILE, JSON.stringify(normalizeStore(store), null, 2), "utf-8");
+  try {
+    ensureDataDir();
+    fs.writeFileSync(DATA_FILE, JSON.stringify(normalizeStore(store), null, 2), "utf-8");
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 export function resetStore() {
