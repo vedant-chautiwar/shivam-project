@@ -21,14 +21,10 @@ function seedStore() {
 }
 
 function readStore() {
-  try {
-    if (!fs.existsSync(DATA_FILE)) {
-      fs.writeFileSync(DATA_FILE, JSON.stringify(seedStore()));
-    }
-    return JSON.parse(fs.readFileSync(DATA_FILE));
-  } catch {
-    return seedStore();
-  }
+  // ALWAYS reset (for demo)
+  const store = seedStore();
+  fs.writeFileSync(DATA_FILE, JSON.stringify(store));
+  return store;
 }
 
 export default function handler(req, res) {
