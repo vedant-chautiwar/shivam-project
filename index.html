@@ -832,6 +832,7 @@ const API_BASE = '/api';
 let slots = [], activities = [], allBookings = [], walkins = [];
 let currentUser = null, currentRole = null, loginRole = 'user';
 let syncInterval = null;
+const USER_BOOKING_CACHE_KEY = 'parksync_user_booking_cache';
 
 const USERS = {
   user1:{pass:'1234',role:'user',name:'Arjun Mehta'},
@@ -851,6 +852,49 @@ function nowTime(){return new
 
 Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});}
 function nowDate(){return new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'});}
+
+function readBookingCache(){
+  try{
+    const raw = sessionStorage.getItem(USER_BOOKING_CACHE_KEY);
+    const parsed = raw ? JSON.parse(raw) : {};
+    return parsed && typeof parsed === 'object' ? parsed : {};
+  }catch{
+    return {};
+  }
+}
+
+function writeBookingCache(cache){
+  sessionStorage.setItem(USER_BOOKING_CACHE_KEY, JSON.stringify(cache));
+}
+
+function getCachedBookingsForUser(username){
+  if(!username) return [];
+  const cache = readBookingCache();
+  return Array.isArray(cache[username]) ? cache[username] : [];
+}
+
+function upsertCachedBooking(username, booking){
+  if(!username || !booking || !booking.id) return;
+  const cache = readBookingCache();
+  const list = Array.isArray(cache[username]) ? cache[username] : [];
+  const next = [booking, ...list.filter(b=>b.id!==booking.id)].slice(0,100);
+  cache[username] = next;
+  writeBookingCache(cache);
+}
+
+function mergeUserBookingCache(serverBookings){
+  if(!currentUser) return serverBookings;
+  const cached = getCachedBookingsForUser(currentUser);
+  if(!cached.length) return serverBookings;
+  const ids = new Set(serverBookings.map(b=>b.id));
+  return [...cached.filter(b=>!ids.has(b.id)), ...serverBookings];
+}
+
+function backfillBookingCacheFromState(){
+  if(!currentUser) return;
+  const mine = allBookings.filter(b=>b && b.id && b.user===currentUser && b.type==='Online');
+  mine.forEach(b=>upsertCachedBooking(currentUser,b));
+}
 
 function initSlots(){
   slots=[];
@@ -888,8 +932,9 @@ walkins=slots.filter(s=>s.status==='occupied').slice(0,8).map(s=>({slot:s.id,veh
 function applyServerState(state){
   slots = state.slots || [];
   activities = state.activities || [];
-  allBookings = state.allBookings || [];
+  allBookings = mergeUserBookingCache(state.allBookings || []);
   walkins = state.walkins || [];
+  backfillBookingCacheFromState();
 }
 
 async function requestApi(path, options){
@@ -1157,6 +1202,9 @@ async function makeBooking(){
         vehicle,name,phone,slotIdPreferred:slotIdPref,dur,loc,user:currentUser
       }),
     });
+    const myBooking = {...result.booking, user: currentUser, type:'Online', status: result.booking?.status || 'Reserved'};
+    upsertCachedBooking(currentUser, myBooking);
+    allBookings = [myBooking, ...allBookings.filter(b=>b.id!==myBooking.id)];
     await syncStateFromServer({silent:true});
     document.getElementById('bk-code').textContent=result.booking.id;
     document.getElementById('bk-detail').textContent=`Slot ${slotLabel(result.booking.slot)} Â· ${loc} Â· ${dur} Â· Hold expires in 15 min`;
@@ -1174,7 +1222,8 @@ function clearBookingForm(){
 }
 
 function renderUserBookings(){
-  const userBookings=currentUser?allBookings.filter(b=>b.user===currentUser&&b.type==='Online'):[];
+  const cachedIds = new Set(getCachedBookingsForUser(currentUser).map(b=>b.id));
+  const userBookings=currentUser?allBookings.filter(b=>b.type==='Online' && (b.user===currentUser || cachedIds.has(b.id))):[];
   const resEl=document.getElementById('u-res-list');
   const active=userBookings.filter(b=>b.status==='Reserved');
   resEl.innerHTML=active.length?active.map(b=>`
