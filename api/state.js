@@ -5,14 +5,18 @@ const TOTAL = 68;
 
 function seedStore() {
   const slots = [];
+
   for (let i = 0; i < TOTAL; i++) {
+    let status = i < 50 ? "available" : "occupied"; // ✅ ensure availability
+
     slots.push({
       id: i + 1,
-      status: Math.random() < 0.5 ? "available" : "occupied",
+      status,
       vehicle: "",
       bookedBy: ""
     });
   }
+
   return { slots, allBookings: [] };
 }
 
