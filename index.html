@@ -828,8 +828,10 @@ v2.1</span></div>
 <script>
 /* â•â•â•â•â•â•â•â•â•â•â•â•â•â• DATA â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 const TOTAL = 68;
-let slots = [], activities = [], allBookings = [], walkins = [], userBookings = [];
+const API_BASE = '/api';
+let slots = [], activities = [], allBookings = [], walkins = [];
 let currentUser = null, currentRole = null, loginRole = 'user';
+let syncInterval = null;
 
 const USERS = {
   user1:{pass:'1234',role:'user',name:'Arjun Mehta'},
@@ -881,6 +883,65 @@ walkins=slots.filter(s=>s.status==='occupied').slice(0,8).map(s=>({slot:s.id,veh
     {id:genId(),type:'Walk-in',slot:33,vehicle:'DL 05 EF 3311',name:'Sneha R.',loc:'Restaurant',dur:'â€”',time:'09:15',status:'Completed'},
     {id:genId(),type:'Online',slot:8,vehicle:'KA 09 GH 7722',name:'Meera L.',loc:'Mall',dur:'1 hr',time:'08:45',status:'Released'},
   ];
+}
+
+function applyServerState(state){
+  slots = state.slots || [];
+  activities = state.activities || [];
+  allBookings = state.allBookings || [];
+  walkins = state.walkins || [];
+}
+
+async function requestApi(path, options){
+  const res = await fetch(API_BASE + path, options);
+  const body = await res.json().catch(()=>({}));
+  if(!res.ok){
+    throw new Error(body.error || 'Request failed');
+  }
+  return body;
+}
+
+function refreshQuickStats(){
+  const online = allBookings.filter(b=>b.type==='Online').length;
+  const walkin = allBookings.filter(b=>b.type==='Walk-in').length;
+  const released = allBookings.filter(b=>b.status==='Released').length;
+  const onlineEl = document.getElementById('qs-online');
+  const walkinEl = document.getElementById('qs-walkin');
+  const releasedEl = document.getElementById('qs-released');
+  if(onlineEl) onlineEl.textContent = online;
+  if(walkinEl) walkinEl.textContent = walkin;
+  if(releasedEl) releasedEl.textContent = released;
+}
+
+function refreshUI(){
+  updateAllMetrics();
+  refreshQuickStats();
+  renderUserGrid();
+  populateUserSlotSelect();
+  renderUserBookings();
+  renderAdminGrid();
+  renderManageGrid();
+  renderAdminActivity();
+  populateAdminSelects();
+  renderAdminReservations();
+  renderWalkinTable();
+  renderAllBookings();
+}
+
+async function syncStateFromServer(opts){
+  try{
+    const state = await requestApi('/state');
+    applyServerState(state);
+    refreshUI();
+  }catch(err){
+    if(opts && opts.allowFallback){
+      initSlots();
+      refreshUI();
+    }
+    if(!opts || !opts.silent){
+      console.error(err);
+    }
+  }
 }
 
 /* â•â•â•â•â•â•â•â•â•â•â•â•â•â• LOGIN â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
@@ -955,8 +1016,11 @@ function startAdminView(username){
   return true;
 }
 
-function bootApp(){
-  initSlots();
+async function bootApp(){
+  await syncStateFromServer({allowFallback:true,silent:true});
+  if(!syncInterval){
+    syncInterval = setInterval(()=>syncStateFromServer({silent:true}),4000);
+  }
   const params=new URLSearchParams(window.location.search);
   const page=params.get('page');
   const username=sessionStorage.getItem('parksync_user');
@@ -1072,7 +1136,7 @@ function populateUserSlotSelect(){
     +avail.map(s=>`<option value="${s.id}">${slotLabel(s.id)} â€” ${s.loc}</option>`).join('');
 }
 
-function makeBooking(){
+async function makeBooking(){
   const vehicle=document.getElementById('bk-vehicle').value.trim();
   const name=document.getElementById('bk-name').value.trim();
   const phone=document.getElementById('bk-phone').value.trim();
@@ -1083,20 +1147,24 @@ function makeBooking(){
   err.style.display='none';
   const slotIdPref=parseInt(document.getElementById('bk-slot').value)||0;
 
-  const chosen=slotIdPref?slots.find(s=>s.id===slotIdPref&&s.status==='available')||avail[0]:avail[0];
   const dur=document.getElementById('bk-dur').value;
   const loc=document.getElementById('bk-location').value==='mall'?'Mall':'Restaurant';
-  const bkId=genId();
-  chosen.status='reserved';chosen.bookedBy=name;chosen.timer=15;chosen.loc=loc;chosen.type='Online';
-  const entry={id:bkId,type:'Online',slot:chosen.id,vehicle,name,loc,dur,time:nowTime(),status:'Reserved'};
-  allBookings.unshift(entry);
-  userBookings.unshift({...entry});
-  activities.unshift({type:'reserve',text:`Online booking by ${name} â€” slot ${slotLabel(chosen.id)}`,time:'just now'});
-  document.getElementById('bk-code').textContent=bkId;
-  document.getElementById('bk-detail').textContent=`Slot ${slotLabel(chosen.id)} Â· ${loc} Â· ${dur} Â· Hold expires in 15 min`;
-  document.getElementById('bk-confirm').classList.add('show');
-  document.getElementById('qs-online').textContent=parseInt(document.getElementById('qs-online').textContent)+1;
-  updateAllMetrics();renderAdminGrid();renderUserGrid();renderAdminActivity();populateUserSlotSelect();populateAdminSelects();renderAdminReservations();
+  try{
+    const result = await requestApi('/bookings',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        vehicle,name,phone,slotIdPreferred:slotIdPref,dur,loc,user:currentUser
+      }),
+    });
+    await syncStateFromServer({silent:true});
+    document.getElementById('bk-code').textContent=result.booking.id;
+    document.getElementById('bk-detail').textContent=`Slot ${slotLabel(result.booking.slot)} Â· ${loc} Â· ${dur} Â· Hold expires in 15 min`;
+    document.getElementById('bk-confirm').classList.add('show');
+  }catch(apiErr){
+    err.textContent=apiErr.message||'Could not complete booking. Please try again.';
+    err.style.display='block';
+  }
 }
 
 function clearBookingForm(){
@@ -1106,6 +1174,7 @@ function clearBookingForm(){
 }
 
 function renderUserBookings(){
+  const userBookings=currentUser?allBookings.filter(b=>b.user===currentUser&&b.type==='Online'):[];
   const resEl=document.getElementById('u-res-list');
   const active=userBookings.filter(b=>b.status==='Reserved');
   resEl.innerHTML=active.length?active.map(b=>`
@@ -1141,43 +1210,40 @@ function renderAdminReservations(){
   ['a-res-list'].forEach(id=>{const el=document.getElementById(id);if(el)el.innerHTML=html;});
 }
 
-function walkinEntry(){
+async function walkinEntry(){
   const vehicle=document.getElementById('wi-vehicle').value.trim();
   if(!vehicle){showMsg('wi-err','wi-ok','Please enter a vehicle number.');return;}
   const avail=slots.filter(s=>s.status==='available');
   if(!avail.length){showMsg('wi-err','wi-ok','No available slots.');return;}
   const slotId=parseInt(document.getElementById('wi-slot').value)||0;
-  const chosen=slotId?
-
-slots.find(s=>s.id===slotId&&s.status==='available')||avail[0]:avail[0];
   const name=document.getElementById('wi-name').value.trim()||'â€”';
   const loc=document.getElementById('wi-location').value;
-  chosen.status='occupied';chosen.vehicle=vehicle;chosen.type='Walk-in';chosen.loc=loc;
-  const entry={id:genId(),type:'Walk-in',slot:chosen.id,vehicle,name,loc,dur:'â€”',time:nowTime(),status:'Active'};
-  allBookings.unshift(entry);
-  walkins.unshift({slot:chosen.id,vehicle,name,loc,time:nowTime()});
-  activities.unshift({type:'check-in',text:`Walk-in: ${vehicle} â€” slot ${slotLabel(chosen.id)}`,time:'just now'});
-
-  document.getElementById('qs-walkin').textContent=parseInt(document.getElementById('qs-walkin').textContent)+1;
-  showMsg('wi-ok','wi-err',`${vehicle} assigned to slot ${slotLabel(chosen.id)}.`);
-  document.getElementById('wi-vehicle').value='';document.getElementById('wi-name').value='';
-  updateAllMetrics();renderAdminGrid();renderUserGrid();renderAdminActivity();populateAdminSelects();renderWalkinTable();renderAllBookings();
+  try{
+    const result = await requestApi('/walkins',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({vehicle,name,slotId,loc}),
+    });
+    await syncStateFromServer({silent:true});
+    showMsg('wi-ok','wi-err',`${vehicle} assigned to slot ${slotLabel(result.booking.slot)}.`);
+    document.getElementById('wi-vehicle').value='';document.getElementById('wi-name').value='';
+  }catch(apiErr){
+    showMsg('wi-err','wi-ok',apiErr.message||'Could not create walk-in entry.');
+  }
 }
 
-function releaseSlot(){
+async function releaseSlot(){
   const sel=document.getElementById('mg-slot');
   const id=parseInt(sel.value);
   if(!id){showMsg('mg-err','mg-ok','Please select a slot.');return;}
 
-  const slot=slots.find(s=>s.id===id);
-  if(!slot){showMsg('mg-err','mg-ok','Slot not found.');return;}
-  activities.unshift({type:'release',text:`Slot ${slotLabel(id)} released (${slot.vehicle||slot.bookedBy||'reserved'})`,time:'just now'});
-  allBookings.filter(b=>b.slot===id&&(b.status==='Active'||b.status==='Reserved')).forEach(b=>b.status='Released');
-  slot.status='available';slot.vehicle='';slot.bookedBy='';slot.timer=null;
-  document.getElementById('qs-released').textContent=parseInt(document.getElementById('qs-released').textContent)+1;
-  showMsg('mg-ok','mg-err',`Slot ${slotLabel(id)} is now available.`);
-
-  updateAllMetrics();renderAdminGrid();renderManageGrid();renderUserGrid();renderAdminActivity();populateAdminSelects();populateUserSlotSelect();renderAdminReservations();renderAllBookings();
+  try{
+    await requestApi(`/slots/${id}/release`,{method:'POST'});
+    await syncStateFromServer({silent:true});
+    showMsg('mg-ok','mg-err',`Slot ${slotLabel(id)} is now available.`);
+  }catch(apiErr){
+    showMsg('mg-err','mg-ok',apiErr.message||'Could not release slot.');
+  }
 }
 
 function renderWalkinTable(){
