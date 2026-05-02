@@ -1,10 +1,10 @@
 import express from "express";
 import path from "path";
 import { fileURLToPath } from "url";
-import stateHandler from "./api/state.js";
-import bookingsHandler from "./api/bookings.js";
-import walkinsHandler from "./api/walkins.js";
-import releaseHandler from "./api/release.js";
+import stateHandler from "./state.js";
+import bookingsHandler from "./bookings.js";
+import walkinsHandler from "./walkins.js";
+import releaseHandler from "./release.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
