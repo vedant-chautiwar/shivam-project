@@ -332,19 +332,19 @@ tr:hover td{background:var(--surface2);}
     <div class="landing-left">
       <div class="landing-badge"><span class="pulse"></span> Real-time parking management</div>
       <h1 class="landing-h1">Smart parking<br>for <span>malls &amp;<br>restaurants</span></h1>
-      <p class="landing-sub">ParkSync combines online booking with manual walk-in entry â€” one centralized system that keeps every slot tracked, every vehicle accounted for.</p>
+      <p class="landing-sub">A hybrid parking management system for malls and restaurants: customers reserve online, staff handle walk-ins, and every slot updates from one shared database.</p>
 
       <div class="feature-pills">
-        <span class="pill">âœ¦ Real-time slot tracking</span>
-        <span class="pill">âœ¦ Online reservations</span>
-        <span class="pill">âœ¦ Walk-in management</span>
-        <span class="pill">âœ¦ Auto timeout release</span>
-        <span class="pill">âœ¦ Reports &amp; analytics</span>
+        <span class="pill">Real-time slot tracking</span>
+        <span class="pill">Online reservations</span>
+        <span class="pill">Manual walk-in entry</span>
+        <span class="pill">Automatic timeout release</span>
+        <span class="pill">Admin reports</span>
       </div>
       <div class="landing-stats">
         <div class="lstat"><span class="lstat-val">68</span><span class="lstat-label">Total slots</span></div>
         <div class="lstat"><span class="lstat-val">15m</span><span class="lstat-label">Auto-release</span></div>
-        <div class="lstat"><span class="lstat-val">2</span><span class="lstat-label">Floors</span></div>
+        <div class="lstat"><span class="lstat-val">2</span><span class="lstat-label">Locations</span></div>
       </div>
     </div>
     <div class="landing-right">
@@ -415,7 +415,7 @@ tr:hover td{background:var(--surface2);}
         <div class="page-header">
 
           <div class="page-title">Parking Availability</div>
-          <div class="page-sub">Select a slot to view details or proceed to booking</div>
+          <div class="page-sub">Check live availability before reserving a slot online</div>
         </div>
         <div class="metrics-row">
           <div class="metric-card green"><div class="metric-label">Available</div><div class="metric-val green" id="u-cnt-avail">â€”</div><div class="metric-sub">Ready to book</div></div>
@@ -446,7 +446,7 @@ tr:hover td{background:var(--surface2);}
           <div class="page-title">Book a 
 
 Parking Slot</div>
-          <div class="page-sub">Reserve your slot in advance â€” held for 15 minutes after arrival time</div>
+          <div class="page-sub">Reserve your slot online. Unused reservations are released automatically after 15 minutes.</div>
         </div>
         <div class="two-col">
           <div class="card">
@@ -593,7 +593,7 @@ class="live-label">Live</span>
       <div id="a-walkin" class="section-hidden">
         <div class="page-header">
           <div class="page-title">Walk-in Entry</div>
-          <div class="page-sub">Record walk-in vehicles and assign slots manually</div>
+          <div class="page-sub">Staff can register walk-in vehicles without blocking online customers</div>
         </div>
         <div class="two-col">
           <div class="card">
@@ -631,7 +631,7 @@ class="live-label">Live</span>
       <div id="a-manage" class="section-hidden">
         <div class="page-header">
           <div class="page-title">Manage Slots</div>
-          <div class="page-sub">Release occupied or reserved slots manually</div>
+          <div class="page-sub">Manually release slots after exit or override a stale reservation</div>
         </div>
         <div class="two-col">
           <div class="card">
@@ -663,7 +663,7 @@ class="live-label">Live</span>
       <div id="a-bookings" class="section-hidden">
         <div class="page-header">
           <div class="page-title">All Bookings</div>
-          <div class="page-sub">Full record of all reservations and walk-ins</div>
+          <div class="page-sub">Centralized record of online reservations and manual walk-in entries</div>
         </div>
         <div class="card">
           <div style="display:flex;align-items:center;gap:10px;margin-bottom:1rem;flex-wrap:wrap;">
@@ -944,7 +944,13 @@ walkins=slots.filter(s=>s.status==='occupied').slice(0,8).map(s=>({slot:s.id,veh
 }
 
 function applyServerState(state){
-  slots = state.slots || [];
+  slots = (state.slots || []).map(slot=>{
+    if(slot.status==='reserved' && slot.reservedUntil){
+      const left = Math.ceil((new Date(slot.reservedUntil).getTime() - Date.now()) / 60000);
+      return {...slot, timer: Math.max(0, left)};
+    }
+    return slot;
+  });
   activities = state.activities || [];
   allBookings = mergeUserBookingCache(state.allBookings || []);
   walkins = state.walkins || [];
@@ -1238,6 +1244,18 @@ function clearBookingForm(){
   document.getElementById('bk-err').style.display='none';
 }
 
+function getBookingTimerText(booking){
+  const slot = slots.find(s=>s.id===booking.slot);
+  if(slot && slot.status==='reserved' && Number.isFinite(Number(slot.timer))){
+    return `${Math.max(0, Number(slot.timer))} min left`;
+  }
+  if(booking.reservedUntil){
+    const left = Math.ceil((new Date(booking.reservedUntil).getTime() - Date.now()) / 60000);
+    return `${Math.max(0, left)} min left`;
+  }
+  return '15 min left';
+}
+
 function renderUserBookings(){
   const cachedIds = new Set(getCachedBookingsForUser(currentUser).map(b=>b.id));
   const userBookings=currentUser?allBookings.filter(b=>b.type==='Online' && (b.user===currentUser || cachedIds.has(b.id))):[];
@@ -1247,7 +1265,7 @@ function renderUserBookings(){
     <div class="res-item">
       <span class="res-slot">${slotLabel(b.slot)}</span>
       <div class="res-info"><div class="res-name">${b.name}</div><div class="res-detail">${b.vehicle} Â· ${b.loc} Â· ${b.dur}</div></div>
-      <span class="res-timer">15 min left</span>
+      <span class="res-timer">${getBookingTimerText(b)}</span>
     </div>`).join(''):'<div style="font-size:13px;color:var(--ink4)">No active reservations.</div>';
   const hist=document.getElementById('u-history-body');
   if(hist)hist.innerHTML=userBookings.map(b=>`
@@ -1278,9 +1296,9 @@ function renderAdminReservations(){
 
 async function walkinEntry(){
   const vehicle=document.getElementById('wi-vehicle').value.trim();
-  if(!vehicle){showMsg('wi-err','wi-ok','Please enter a vehicle number.');return;}
+  if(!vehicle){showMsg('wi-ok','wi-err','Please enter a vehicle number.',true);return;}
   const avail=slots.filter(s=>s.status==='available');
-  if(!avail.length){showMsg('wi-err','wi-ok','No available slots.');return;}
+  if(!avail.length){showMsg('wi-ok','wi-err','No available slots.',true);return;}
   const slotId=parseInt(document.getElementById('wi-slot').value)||0;
   const name=document.getElementById('wi-name').value.trim()||'â€”';
   const loc=document.getElementById('wi-location').value;
@@ -1294,21 +1312,21 @@ async function walkinEntry(){
     showMsg('wi-ok','wi-err',`${vehicle} assigned to slot ${slotLabel(result.booking.slot)}.`);
     document.getElementById('wi-vehicle').value='';document.getElementById('wi-name').value='';
   }catch(apiErr){
-    showMsg('wi-err','wi-ok',apiErr.message||'Could not create walk-in entry.');
+    showMsg('wi-ok','wi-err',apiErr.message||'Could not create walk-in entry.',true);
   }
 }
 
 async function releaseSlot(){
   const sel=document.getElementById('mg-slot');
   const id=parseInt(sel.value);
-  if(!id){showMsg('mg-err','mg-ok','Please select a slot.');return;}
+  if(!id){showMsg('mg-ok','mg-err','Please select a slot.',true);return;}
 
   try{
     await requestApi(`/slots/${id}/release`,{method:'POST'});
     await syncStateFromServer({silent:true});
     showMsg('mg-ok','mg-err',`Slot ${slotLabel(id)} is now available.`);
   }catch(apiErr){
-    showMsg('mg-err','mg-ok',apiErr.message||'Could not release slot.');
+    showMsg('mg-ok','mg-err',apiErr.message||'Could not release slot.',true);
   }
 }
 
@@ -1387,10 +1405,12 @@ function exportCSV(){
 }
 
 /* â•â•â•â•â•â•â•â•â•â•â•â•â•â• HELPERS â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
-function showMsg(okId,errId,text){
+function showMsg(okId,errId,text,isError){
   const ok=document.getElementById(okId),err=document.getElementById(errId);
-  if(ok){ok.textContent=text;ok.style.display='block';setTimeout(()=>ok.style.display='none',3500);}
-  if(err)err.style.display='none';
+  const target = isError ? err : ok;
+  const other = isError ? ok : err;
+  if(target){target.textContent=text;target.style.display='block';setTimeout(()=>target.style.display='none',3500);}
+  if(other)other.style.display='none';
 }
 function showSettingsSaved(id){const el=document.getElementById(id);el.style.display='block';setTimeout(()=>el.style.display='none',3000);}
 function updateDateTime(){const el=document.getElementById('a-datetime');if(el)el.textContent=new Date().toLocaleString('en-IN',{weekday:'long',year:'numeric',month:'long',day:'numeric',hour:'2-digit',minute:'2-digit'});}

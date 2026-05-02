@@ -3,6 +3,7 @@ import path from "path";
 
 const TOTAL = 68;
 const AVAILABLE_SLOTS = 50;
+const RESERVATION_TIMEOUT_MINUTES = 15;
 const DATA_FILE = process.env.VERCEL
   ? "/tmp/store.json"
   : path.join(process.cwd(), "data", "store.json");
@@ -23,6 +24,19 @@ function slotLabel(slotId) {
   return `P${String(slotId).padStart(2, "0")}`;
 }
 
+function minutesFromNow(minutes) {
+  return new Date(Date.now() + minutes * 60 * 1000).toISOString();
+}
+
+function minutesUntil(isoDate) {
+  if (!isoDate) {
+    return null;
+  }
+
+  const remaining = Math.ceil((new Date(isoDate).getTime() - Date.now()) / 60000);
+  return Number.isFinite(remaining) ? Math.max(0, remaining) : null;
+}
+
 function baseSlots() {
   return Array.from({ length: TOTAL }, (_, idx) => {
     const id = idx + 1;
@@ -32,6 +46,7 @@ function baseSlots() {
       vehicle: "",
       bookedBy: "",
       timer: null,
+      reservedUntil: null,
       loc: id <= 40 ? "Mall" : "Restaurant",
       type: "Online"
     };
@@ -55,7 +70,11 @@ function normalizeStore(store) {
     return fallback;
   }
 
-  const slots = Array.isArray(store.slots) ? store.slots : fallback.slots;
+  const slots = (Array.isArray(store.slots) ? store.slots : fallback.slots).map((slot, idx) => ({
+    ...fallback.slots[idx],
+    ...slot,
+    reservedUntil: slot?.reservedUntil || null
+  }));
 
   return {
     ...fallback,
@@ -65,6 +84,56 @@ function normalizeStore(store) {
     allBookings: Array.isArray(store.allBookings) ? store.allBookings : [],
     walkins: Array.isArray(store.walkins) ? store.walkins : []
   };
+}
+
+function releaseExpiredReservations(store) {
+  let changed = false;
+
+  store.slots.forEach(slot => {
+    if (slot.status !== "reserved") {
+      return;
+    }
+
+    if (!slot.reservedUntil && slot.timer) {
+      slot.reservedUntil = minutesFromNow(slot.timer);
+      changed = true;
+    }
+
+    const remaining = minutesUntil(slot.reservedUntil);
+    slot.timer = remaining;
+
+    if (remaining !== null && remaining <= 0) {
+      const activeBooking = store.allBookings.find(
+        booking => booking.slot === slot.id && booking.status === "Reserved"
+      );
+
+      if (activeBooking) {
+        activeBooking.status = "Released";
+        activeBooking.releaseReason = "Auto timeout";
+      }
+
+      store.activities.unshift({
+        type: "release",
+        text: `Slot ${slotLabel(slot.id)} auto-released after timeout`,
+        time: "just now"
+      });
+
+      slot.status = "available";
+      slot.vehicle = "";
+      slot.bookedBy = "";
+      slot.timer = null;
+      slot.reservedUntil = null;
+      slot.type = "Online";
+      changed = true;
+    }
+  });
+
+  if (changed) {
+    store.activities = store.activities.slice(0, 30);
+    store.updatedAt = new Date().toISOString();
+  }
+
+  return changed;
 }
 
 function ensureDataDir() {
@@ -81,7 +150,11 @@ export function readStore() {
 
   try {
     const raw = fs.readFileSync(DATA_FILE, "utf-8");
-    return normalizeStore(JSON.parse(raw));
+    const store = normalizeStore(JSON.parse(raw));
+    if (releaseExpiredReservations(store)) {
+      writeStore(store);
+    }
+    return store;
   } catch {
     const seeded = baseState();
     writeStore(seeded);
@@ -123,7 +196,8 @@ export function reserveSlot({ vehicle, name, phone, slotIdPreferred = 0, dur = "
   slot.status = "reserved";
   slot.vehicle = "";
   slot.bookedBy = name;
-  slot.timer = 15;
+  slot.reservedUntil = minutesFromNow(RESERVATION_TIMEOUT_MINUTES);
+  slot.timer = RESERVATION_TIMEOUT_MINUTES;
   slot.type = "Online";
   if (loc) {
     slot.loc = loc;
@@ -140,6 +214,7 @@ export function reserveSlot({ vehicle, name, phone, slotIdPreferred = 0, dur = "
     loc: slot.loc,
     dur,
     time: nowTime(),
+    reservedUntil: slot.reservedUntil,
     status: "Reserved"
   };
 
@@ -175,6 +250,7 @@ export function addWalkin({ vehicle, name = "-", slotId = 0, loc }) {
   slot.vehicle = vehicle;
   slot.bookedBy = "";
   slot.timer = null;
+  slot.reservedUntil = null;
   slot.type = "Walk-in";
   if (loc) {
     slot.loc = loc === "mall" ? "Mall" : loc === "restaurant" ? "Restaurant" : loc;
@@ -232,6 +308,7 @@ export function releaseSlotById(id) {
     slot.vehicle = "";
     slot.bookedBy = "";
     slot.timer = null;
+    slot.reservedUntil = null;
     slot.type = "Online";
 
     const activeBooking = store.allBookings.find(
